@@ -57,9 +57,9 @@ public class PointDensity implements Variational {
         return new Builder();
     }
 
-    private Builder config;
+    private final Builder config;
 
-    private PointDensity(Builder builder) { this.config = config; }
+    private PointDensity(Builder config) { this.config = config; }
 
     private class Density implements Variational.Density {
 
@@ -147,6 +147,7 @@ public class PointDensity implements Variational {
         return new JSONObject()
                 .put("name", name())
                 .put("prior mean", config.prior_mean)
-                .put("prior deviation", config.prior_deviation);
+                .put("prior deviation", config.prior_deviation)
+                .put("optimization", config.optimization.serialize());
     }
 }

@@ -30,7 +30,7 @@ public class Cloning implements Agent {
         private boolean reinitialize = false;
 
         // The name of this algorithm
-        private String name = "Behavioral Cloning";
+        private String name = "Cloning";
 
         // The variational model we use to represent posteriors over intent vectors
         private Variational task_source = null;
@@ -204,7 +204,7 @@ public class Cloning implements Agent {
 
                 // Pack the gradient into the flat buffer
                 for(int state = 0; state < gradient_buffer.length; ++state)
-                    for(int action = 0; action < gradient_buffer[state].length; ++state)
+                    for(int action = 0; action < gradient_buffer[state].length; ++action)
                         flat_buffer[mapping[state][action]] = gradient_buffer[state][action];
 
                 // propagate intent

@@ -8,22 +8,24 @@ import bam.domains.NavGrid;
 class GridRepresentation implements Representation {
 
     private final NavGrid grid;
+    private int depth;
     private final GridRewards rewards;
 
-    GridRepresentation(NavGrid grid) {
+    GridRepresentation(NavGrid grid, int depth) {
         this.grid = grid;
+        this.depth = depth;
 
         rewards = new GridRewards(grid.width(), grid.height());
     }
 
     @Override
     public int numStates() {
-        return grid.numStates();
+        return grid.numCells();
     }
 
     @Override
     public int numActions(int state) {
-        return grid.numActions();
+        return grid.numMoves();
     }
 
     @Override
@@ -33,6 +35,6 @@ class GridRepresentation implements Representation {
 
     @Override
     public DynamicsModel newModel() {
-        return new OccupancyModel(grid);
+        return new GridModel(grid, depth);
     }
 }

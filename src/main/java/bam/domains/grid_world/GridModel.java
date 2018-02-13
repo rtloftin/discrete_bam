@@ -13,50 +13,92 @@ import java.util.Optional;
  * A learned model represented by
  * and occupancy map.
  *
+ * Warning: this class is not thread safe.
+ *
  * Created by Tyler on 10/9/2017.
  */
-class OccupancyModel implements DynamicsModel {
+class GridModel implements DynamicsModel {
 
-    // private final double alpha = 1.0;
+    // private final double alpha = 1.0; // Figure the prior out, will also need for gravity world too
     // private final double beta = 5.0;
 
-    private final double prior = -3.0;
+    private final double prior = -3.0; // need a better way of setting this
 
-    private NavGrid grid;
+    // The underlying navigation grid
+    private final NavGrid grid;
 
+    // Number of states and actions, and planning depth
+    private final int num_states;
+    private final int num_actions;
+    private final int depth;
+
+    // Output buffers
+    private final int[] one_successor = new int[1];
+    private final int[] two_successors = new int[2];
+
+    private final double[] one_transition = new double[]{ 1.0 };
+    private final double[] two_transitions = new double[2];
+
+    // Parameters
     private double[] parameters;
     private double[] gradient;
 
+    // Parameter optimizer
     private Optimization.Instance optimizer = null;
 
+    // Computes the probability that a state is occupied
     private double occupied(int index) {
         return 1.0 / (1.0 + Math.exp(-parameters[index]));
     }
 
-    OccupancyModel(NavGrid grid) {
+    GridModel(NavGrid grid, int depth) {
         this.grid = grid;
+        this.depth = depth;
 
-        parameters = new double[grid.numStates()];
-        gradient = new double[grid.numStates()];
+        num_states = grid.numCells();
+        num_actions = grid.numMoves();
+
+        parameters = new double[num_states];
+        gradient = new double[num_states];
     }
 
     @Override
-    public int numStates() { return grid.numStates(); }
+    public int numStates() { return num_states; }
 
     @Override
-    public int numActions(int state) { return grid.numActions(); }
+    public int numActions(int state) { return num_actions; }
 
     @Override
-    public int depth() { return grid.depth(); }
+    public int depth() { return depth; }
 
     @Override
-    public int[] successors(int state, int action) { return new int[]{state, grid.next(state, action)}; }
+    public int[] successors(int state, int action) {
+        int next = grid.next(state, action);
+
+        if(next == state) {
+            one_successor[0] = state;
+            return one_successor;
+        }
+
+        two_successors[0] = state;
+        two_successors[1] = next;
+
+        return two_successors;
+    }
 
     @Override
     public double[] transitions(int state, int action) {
-        double collision = occupied(grid.next(state, action));
+        int next = grid.next(state, action);
 
-        return new double[]{collision, 1.0 - collision};
+        if(next == state)
+            return one_transition;
+
+        double collision = occupied(next);
+
+        two_transitions[0] = collision;
+        two_transitions[1] = 1.0 - collision;
+
+        return two_transitions;
     }
 
     @Override
@@ -102,7 +144,9 @@ class OccupancyModel implements DynamicsModel {
     }
 
     @Override
-    public void clear() { Arrays.fill(gradient, 0.0); }
+    public void clear() {
+        Arrays.fill(gradient, 0.0);
+    }
 
     @Override
     public Optional<BufferedImage> render() {

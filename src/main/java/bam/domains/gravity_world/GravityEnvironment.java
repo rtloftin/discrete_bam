@@ -1,4 +1,4 @@
-package bam.domains.grid_world;
+package bam.domains.gravity_world;
 
 import bam.Dynamics;
 import bam.Environment;
@@ -10,34 +10,37 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.awt.*;
+import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
 import java.util.*;
 import java.util.List;
 
-public class GridEnvironment implements Environment {
+public class GravityEnvironment implements Environment {
 
     private final String name;
 
-    private final boolean[][] map;
+    private final int[][] colors;
+    private final int[] gravity;
     private final NavGrid grid;
     private final int depth;
 
     private final List<Task> tasks;
 
-    private final GridDynamics dynamics;
-    private final GridRepresentation representation;
+    private final GravityDynamics dynamics;
+    private final GravityRepresentation representation;
 
-    GridEnvironment(String name, NavGrid grid, boolean[][] map) {
+    GravityEnvironment(String name, NavGrid grid, int[][] colors, int[] gravity) {
         this.name = name;
         this.grid = grid;
-        this.map = map;
+        this.colors = colors;
+        this.gravity = gravity;
 
-        depth = 6 * (grid.width() + grid.height());
+        depth = 8 * (grid.width() + grid.height());
 
         tasks = new LinkedList<>();
 
-        dynamics = new GridDynamics(grid, map, depth);
-        representation = new GridRepresentation(grid, depth);
+        dynamics = new GravityDynamics(grid, colors, gravity, depth);
+        representation = new GravityRepresentation(grid, colors, depth);
     }
 
     /**
@@ -61,19 +64,16 @@ public class GridEnvironment implements Environment {
 
             @Override
             public int initial(Random random) {
-                int row, col;
+                int row = random.nextInt(grid.height());
+                int col = random.nextInt(grid.width());
+                int gravity = random.nextInt(4);
 
-                do {
-                    row = random.nextInt(grid.height());
-                    col = random.nextInt(grid.width());
-                } while(map[row][col]);
-
-                return grid.index(row, col);
+                return (gravity * grid.numCells()) + grid.index(row, col);
             }
 
             @Override
             public double reward(int state) {
-                return rewards[state];
+                return rewards[state % grid.numCells()];
             }
 
             @Override
@@ -122,29 +122,49 @@ public class GridEnvironment implements Environment {
                 .put("name", name())
                 .put("width", grid.width())
                 .put("height", grid.height())
-                .put("actions", grid.numMoves())
+                .put("gravity", gravity)
                 .put("tasks", tsks);
     }
 
     @Override
     public Optional<? extends BufferedImage> render() {
-        BufferedImage image = new BufferedImage(grid.width() * GridWorld.SCALE,
-                grid.height() * GridWorld.SCALE, BufferedImage.TYPE_INT_RGB);
+        BufferedImage image = new BufferedImage(grid.width() * GravityWorld.SCALE,
+                grid.height() * GravityWorld.SCALE, BufferedImage.TYPE_INT_RGB);
         Graphics2D graphics = image.createGraphics();
 
         graphics.translate(0, image.getHeight());
         graphics.scale(1, -1);
 
-        graphics.setPaint(new Color(65,105,225));
+        graphics.setPaint(new Color(85,105,205));
         graphics.fillRect(0, 0, image.getWidth(), image.getHeight());
 
-        graphics.setPaint(new Color(255, 255, 255));
+        Color[] palette = new Color[GravityWorld.CLEAR];
+        palette[GravityWorld.BLUE] = Color.BLUE;
+        palette[GravityWorld.ORANGE] = Color.ORANGE;
+        palette[GravityWorld.GREEN] = Color.GREEN;
+        palette[GravityWorld.PURPLE] = Color.MAGENTA;
+
+        Shape[] shapes = new Shape[4];
+        shapes[GravityWorld.NORTH] = new Polygon(new int[] {0, GravityWorld.SCALE / 2, GravityWorld.SCALE},
+                new int[]{GravityWorld.SCALE, 0, GravityWorld.SCALE}, 3);
+        shapes[GravityWorld.SOUTH] = new Polygon(new int[] {0, GravityWorld.SCALE / 2, GravityWorld.SCALE},
+                new int[]{0, GravityWorld.SCALE, 0}, 3);
+        shapes[GravityWorld.EAST] = new Polygon(new int[]{0, GravityWorld.SCALE, 0},
+                new int[] {0, GravityWorld.SCALE / 2, GravityWorld.SCALE}, 3);
+        shapes[GravityWorld.WEST] = new Polygon(new int[]{GravityWorld.SCALE, 0, GravityWorld.SCALE},
+                new int[] {0, GravityWorld.SCALE / 2, GravityWorld.SCALE}, 3);
 
         for(int row = 0; row < grid.height(); ++row)
             for(int column = 0; column < grid.width(); ++column)
-                if(map[row][column])
-                    graphics.fillRect(column * GridWorld.SCALE,
-                            row * GridWorld.SCALE, GridWorld.SCALE, GridWorld.SCALE);
+                if(GravityWorld.CLEAR != colors[row][column]) {
+                    int color = colors[row][column];
+                    int grav = gravity[color];
+
+                    graphics.setPaint(palette[color]);
+                    graphics.fill(AffineTransform
+                            .getTranslateInstance(column * GravityWorld.SCALE, row * GravityWorld.SCALE)
+                            .createTransformedShape(shapes[grav]));
+                }
 
         return Optional.of(image);
     }

@@ -1,4 +1,4 @@
-package bam.domains.grid_world;
+package bam.domains.gravity_world;
 
 import bam.RewardMapping;
 
@@ -6,28 +6,32 @@ import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.util.Optional;
 
-class GridRewards implements RewardMapping {
+public class GravityRewards implements RewardMapping {
 
-    private int width, height;
+    private final int width;
+    private final int height;
+    private final int num_cells;
 
-    GridRewards(int width, int height) {
+    GravityRewards(int width, int height) {
         this.width = width;
         this.height = height;
+
+        num_cells = width * height;
     }
 
     @Override
     public double reward(int state, double[] intent) {
-        return intent[state];
+        return intent[state % num_cells];
     }
 
     @Override
     public void gradient(int state, double[] intent, double weight, double[] gradient) {
-        gradient[state] += weight;
+        gradient[state % num_cells] += weight;
     }
 
     @Override
     public int intentSize() {
-        return width * height;
+        return num_cells;
     }
 
     @Override
@@ -47,8 +51,8 @@ class GridRewards implements RewardMapping {
         double range = 0.01 + (float)(max - min);
 
         // Render image
-        BufferedImage image = new BufferedImage(width * GridWorld.SCALE,
-                height * GridWorld.SCALE, BufferedImage.TYPE_INT_RGB);
+        BufferedImage image = new BufferedImage(width * GravityWorld.SCALE,
+                height * GravityWorld.SCALE, BufferedImage.TYPE_INT_RGB);
         Graphics2D graphics = image.createGraphics();
 
         graphics.translate(0, image.getHeight());
@@ -59,8 +63,8 @@ class GridRewards implements RewardMapping {
                 float hue = 0.65f * (float)(1.0 - (intent[row + (column * height)] - min) / range);
 
                 graphics.setPaint(Color.getHSBColor(hue, 1f, 1f));
-                graphics.fillRect(column * GridWorld.SCALE,
-                        row * GridWorld.SCALE, GridWorld.SCALE, GridWorld.SCALE);
+                graphics.fillRect(column * GravityWorld.SCALE,
+                        row * GravityWorld.SCALE, GravityWorld.SCALE, GravityWorld.SCALE);
             }
 
         return Optional.of(image);

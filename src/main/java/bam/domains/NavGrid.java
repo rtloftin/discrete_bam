@@ -8,16 +8,28 @@ package bam.domains;
  */
 public class NavGrid {
 
+    // Grid connection types
     public static final int FOUR = 0;
     public static final int EIGHT = 1;
+
+    // Action types
+    public static final int STAY = 0;
+    public static final int UP = 1;
+    public static final int DOWN = 2;
+    public static final int LEFT = 3;
+    public static final int RIGHT = 4;
+    public static final int UP_LEFT = 5;
+    public static final int UP_RIGHT = 6;
+    public static final int DOWN_LEFT = 7;
+    public static final int DOWN_RIGHT = 8;
 
     // The width and height of the grid
     private int width;
     private int height;
 
     // The number of states and actions
-    private int num_states;
-    private int num_actions;
+    private int num_cells;
+    private int num_moves;
 
     // The successors of each state
     private int[][] successors;
@@ -26,17 +38,17 @@ public class NavGrid {
         this.width = width;
         this.height = height;
 
-        num_states = width * height;
-        num_actions = (EIGHT == connect) ? 9 : 5;
+        num_cells = width * height;
+        num_moves = (EIGHT == connect) ? 9 : 5;
 
-        successors = new int[num_states][num_actions];
+        successors = new int[num_cells][num_moves];
 
         // Common actions
 
         for(int row = 0; row < height; ++row)
             for(int column = 0; column < width; ++column) {
                 int state = index(row, column);
-                successors[state][0] = state;
+                successors[state][STAY] = state;
             }
 
         for(int row = 0; row < height; ++row) // UP
@@ -44,9 +56,9 @@ public class NavGrid {
                 int state = index(row, column);
 
                 if(height - 1 == row)
-                    successors[state][1] = state;
+                    successors[state][UP] = state;
                 else
-                    successors[state][1] = index(row + 1, column);
+                    successors[state][UP] = index(row + 1, column);
             }
 
         for(int row = 0; row < height; ++row) // DOWN
@@ -54,9 +66,9 @@ public class NavGrid {
                 int state = index(row, column);
 
                 if(0 == row)
-                    successors[state][2] = state;
+                    successors[state][DOWN] = state;
                 else
-                    successors[state][2] = index(row - 1, column);
+                    successors[state][DOWN] = index(row - 1, column);
             }
 
         for(int row = 0; row < height; ++row) // LEFT
@@ -64,9 +76,9 @@ public class NavGrid {
                 int state = index(row, column);
 
                 if(0 == column)
-                    successors[state][3] = state;
+                    successors[state][LEFT] = state;
                 else
-                    successors[state][3] = index(row, column - 1);
+                    successors[state][LEFT] = index(row, column - 1);
             }
 
         for(int row = 0; row < height; ++row) // RIGHT
@@ -74,9 +86,9 @@ public class NavGrid {
                 int state = index(row, column);
 
                 if(width - 1 == column)
-                    successors[state][4] = state;
+                    successors[state][RIGHT] = state;
                 else
-                    successors[state][4] = index(row, column + 1);
+                    successors[state][RIGHT] = index(row, column + 1);
             }
 
         // Eight connected actions
@@ -86,9 +98,9 @@ public class NavGrid {
                     int state = index(row, column);
 
                     if(height - 1 == row || 0 == column)
-                        successors[state][5] = state;
+                        successors[state][UP_LEFT] = state;
                     else
-                        successors[state][5] = index(row + 1, column - 1);
+                        successors[state][UP_LEFT] = index(row + 1, column - 1);
                 }
 
             for(int row = 0; row < height; ++row) // UP RIGHT
@@ -96,9 +108,9 @@ public class NavGrid {
                     int state = index(row, column);
 
                     if(height - 1 == row || width - 1 == column)
-                        successors[state][6] = state;
+                        successors[state][UP_RIGHT] = state;
                     else
-                        successors[state][6] = index(row + 1, column + 1);
+                        successors[state][UP_RIGHT] = index(row + 1, column + 1);
                 }
 
             for(int row = 0; row < height; ++row) // DOWN LEFT
@@ -106,9 +118,9 @@ public class NavGrid {
                     int state = index(row, column);
 
                     if(0 == row || 0 == column)
-                        successors[state][7] = state;
+                        successors[state][DOWN_LEFT] = state;
                     else
-                        successors[state][7] = index(row - 1, column - 1);
+                        successors[state][DOWN_LEFT] = index(row - 1, column - 1);
                 }
 
             for(int row = 0; row < height; ++row) // DOWN RIGHT
@@ -116,9 +128,9 @@ public class NavGrid {
                     int state = index(row, column);
 
                     if(0 == row || width - 1 == column)
-                        successors[state][8] = state;
+                        successors[state][DOWN_RIGHT] = state;
                     else
-                        successors[state][8] = index(row - 1, column + 1);
+                        successors[state][DOWN_RIGHT] = index(row - 1, column + 1);
                 }
         }
     }
@@ -142,19 +154,12 @@ public class NavGrid {
     }
 
     /**
-     * Returns the required planning depth.
-     *
-     * @return the planning depth
-     */
-    public int depth() { return 2 * (width + height); }
-
-    /**
      * Returns the total number of discrete states.
      *
      * @return the number of states
      */
-    public int numStates() {
-        return num_states;
+    public int numCells() {
+        return num_cells;
     }
 
     /**
@@ -162,9 +167,7 @@ public class NavGrid {
      *
      * @return the number of actions
      */
-    public int numActions() {
-        return num_actions;
-    }
+    public int numMoves() { return num_moves; }
 
     /**
      * Returns the index of the state to which the

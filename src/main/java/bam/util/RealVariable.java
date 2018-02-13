@@ -86,6 +86,8 @@ public class RealVariable {
     }
 
     public double mean(int dimension) {
+        update();
+
         return mean()[dimension];
     }
 
@@ -96,6 +98,8 @@ public class RealVariable {
     }
 
     public double variance(int dimension) {
+        update();
+
         return variance()[dimension];
     }
 
@@ -106,16 +110,20 @@ public class RealVariable {
     }
 
     public double deviation(int dimension) {
+        update();
+
         return deviation()[dimension];
     }
 
     public double[] error() {
         update();
 
-        return deviation;
+        return error;
     }
 
     public double error(int dimension) {
+        update();
+
         return deviation()[dimension];
     }
 }

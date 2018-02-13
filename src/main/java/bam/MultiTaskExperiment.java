@@ -1,5 +1,6 @@
 package bam;
 
+import bam.algorithms.Baseline;
 import bam.algorithms.Expert;
 import bam.util.Log;
 import bam.util.RealVariable;
@@ -164,7 +165,7 @@ public class MultiTaskExperiment {
 
     private Session session(Environment environment,
                             Map<String, Expert> experts,
-                            Algorithm algorithm) throws Exception {
+                            Algorithm algorithm) {
 
         // Get random number generator
         Random random = ThreadLocalRandom.current();
@@ -192,17 +193,17 @@ public class MultiTaskExperiment {
                 agent.task(task.name());
 
                 // Get initial state
-                int state = task.initial(ThreadLocalRandom.current());
+                int state = task.initial(random);
 
                 // Generate trajectory
                 for(int step = 0; step < environment.dynamics().depth(); ++step) {
 
                     // Get next action
-                    int action = expert.action(state, ThreadLocalRandom.current());
+                    int action = expert.action(state, random);
                     agent.observe(TeacherAction.of(state, action));
 
                     // Update state
-                    int next_state = dynamics.transition(state, action, ThreadLocalRandom.current());
+                    int next_state = dynamics.transition(state, action, random);
                     agent.observe(StateTransition.of(state, action, next_state));
                     state = next_state;
                 }
@@ -272,6 +273,17 @@ public class MultiTaskExperiment {
 
         expert_performance /= evaluation_episodes;
 
+        // Compute baseline performance
+        Baseline baseline = Baseline.with(dynamics);
+        double baseline_performance = 0.0;
+
+        for(Task task : environment.tasks())
+            for(int episode = 0; episode < evaluation_episodes; ++episode)
+                baseline_performance += dynamics.simulate(baseline, task,
+                        task.initial(ThreadLocalRandom.current()), dynamics.depth(), ThreadLocalRandom.current());
+
+        baseline_performance /= evaluation_episodes;
+
         // Launch conditions
         List<Future<Condition>> threads = new ArrayList<>();
 
@@ -303,8 +315,9 @@ public class MultiTaskExperiment {
 
         // Save average rewards
         columns = new LinkedList<>();
-        columns.add("demonstration");
-        columns.add("expert");
+        columns.add("Demonstration");
+        columns.add("Baseline");
+        columns.add("Expert");
 
         for(Condition condition : conditions) {
             columns.add(condition.name);
@@ -316,6 +329,7 @@ public class MultiTaskExperiment {
 
         for(int demo = 0; demo < max_demonstrations; ++demo) {
             Table.Row row = rewards.newRow().add(demo + 1);
+            row.add(baseline_performance);
             row.add(expert_performance);
 
             for(Condition condition : conditions)

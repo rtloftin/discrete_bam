@@ -38,7 +38,7 @@ public class ModelBased implements Agent {
         private boolean reinitialize = false;
 
         // The name of this algorithm
-        private String name = "Model Based";
+        private String name = "Model-Based";
 
         // The optimization method for learning the parameters of the dynamics model
         private Optimization dynamics_optimization = null;

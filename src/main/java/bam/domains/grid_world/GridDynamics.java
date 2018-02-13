@@ -5,41 +5,58 @@ import bam.domains.NavGrid;
 
 class GridDynamics implements Dynamics {
 
-    private NavGrid grid;
-    private boolean[][] map;
+    // Number of states and actions, and planning depth
+    private final int num_states;
+    private final int num_actions;
+    private final int depth;
 
-    GridDynamics(NavGrid grid, boolean[][] map) {
-        this.grid = grid;
-        this.map = map;
+    // Successor states
+    private final int[][][] successors;
+
+    // Transition distribution
+    private final double[] determined = new double[] { 1.0 };
+
+    GridDynamics(NavGrid grid, boolean[][] map, int depth) {
+        this.depth = depth;
+
+        num_states = grid.numCells();
+        num_actions = grid.numMoves();
+
+        successors = new int[num_states][num_actions][1];
+
+        for(int state = 0; state < num_states; ++state)
+            for(int action = 0; action < num_actions; ++action) {
+                int next = grid.next(state, action);
+
+                if(map[grid.row(next)][grid.column(next)])
+                    next = state;
+
+                successors[state][action][0] = next;
+            }
     }
 
     @Override
     public int numStates() {
-        return grid.numStates();
+        return num_states;
     }
 
     @Override
     public int numActions(int state) {
-        return grid.numActions();
+        return num_actions;
     }
 
     @Override
     public int depth() {
-        return 2 * grid.height() * grid.width();
+        return depth;
     }
 
     @Override
     public int[] successors(int state, int action) {
-        int next = grid.next(state, action);
-
-        if(map[grid.row(next)][grid.column(next)])
-            return new int[]{ state };
-
-        return new int[]{ next };
+        return successors[state][action];
     }
 
     @Override
     public double[] transitions(int state, int action) {
-        return new double[] { 1.0 };
+        return determined;
     }
 }
