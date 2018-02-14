@@ -49,7 +49,7 @@ public class RmsProp implements Optimization {
     public JSONObject serialize() throws JSONException {
         return new JSONObject()
                 .put("name", name())
-                .put("bam.deprecated.learning rate", learning_rate)
+                .put("learning rate", learning_rate)
                 .put("average ratio", average_ratio)
                 .put("offset", offset);
     }

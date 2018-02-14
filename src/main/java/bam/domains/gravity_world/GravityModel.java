@@ -63,7 +63,7 @@ public class GravityModel implements DynamicsModel {
         int row = grid.row(cell);
         int column = grid.column(cell);
 
-        if(GravityWorld.CLEAR == colors[row][column]) {
+        if(GravityWorld.CLEAR != colors[row][column]) { // If the cell is clear then there is nothing to learn
             int gravity = end / grid.numCells();
             int offset = 4 * colors[row][column];
 

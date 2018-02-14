@@ -2,10 +2,12 @@ package bam;
 
 
 import bam.algorithms.action.ActionModel;
+import bam.algorithms.optimization.Adam;
 import bam.algorithms.planning.BoltzmannPlanner;
 import bam.algorithms.planning.MaxPlanner;
 import bam.algorithms.variational.Variational;
 import bam.domains.NavGrid;
+import bam.domains.gravity_world.GravityWorld;
 import bam.util.Util;
 import bam.algorithms.*;
 import bam.algorithms.optimization.Momentum;
@@ -114,7 +116,7 @@ public class Main {
                 .build();
 
         // Initialize experiment
-        SingleTaskExperiment experiment = SingleTaskExperiment.builder()
+        SingleTaskDemoExperiment experiment = SingleTaskDemoExperiment.builder()
                 .environments(empty, center_block, center_wall, two_rooms)
                 .algorithms(bam, model, cloning, irl)
                 .numSessions(50)
@@ -186,7 +188,7 @@ public class Main {
                 .build();
 
         // Initialize experiment
-        MultiTaskExperiment experiment = MultiTaskExperiment.builder()
+        MultiTaskDemoExperiment experiment = MultiTaskDemoExperiment.builder()
                 .environments(empty, center_block, center_wall, two_rooms, three_rooms)
                 .algorithms(bam, model, cloning, irl)
                 .numSessions(50)
@@ -214,6 +216,8 @@ public class Main {
         Environment two_rooms = GridWorld.twoRooms(NavGrid.FOUR);
         Environment three_rooms = GridWorld.threeRooms(NavGrid.FOUR);
 
+        Environment flip = GravityWorld.flip();
+
         // Action Model
         ActionModel action_model = NormalizedActionModel.beta(1.0);
 
@@ -232,9 +236,10 @@ public class Main {
                 .build();
 
         // Initialize experiment
-        MultiTaskExperiment experiment = MultiTaskExperiment.builder()
+        MultiTaskDemoExperiment experiment = MultiTaskDemoExperiment.builder()
                 //.environments(two_rooms, three_rooms)
-                .environments(empty, center_block, center_wall, two_rooms)
+                // .environments(empty, center_block, center_wall, two_rooms)
+                .environments(flip)
                 .algorithms(cloning)
                 .numSessions(20)
                 .maxDemonstrations(20)
@@ -256,12 +261,16 @@ public class Main {
         Environment two_rooms = GridWorld.twoRooms(NavGrid.FOUR);
         Environment three_rooms = GridWorld.threeRooms(NavGrid.FOUR);
 
+        Environment flip = GravityWorld.flip();
+
         // Action Model
         ActionModel action_model = NormalizedActionModel.beta(1.0);
 
         // Task source
         Variational task_source = PointDensity.builder()
-                .optimization(Momentum.with(0.01, 0.5)).build();
+                //.optimization(Momentum.with(0.01, 0.5))
+                .optimization(Adam.with(0.01, 0.8, 0.8, 0.05))
+                .build();
 
         /* Variational task_source = GaussianDensity.builder()
                 .optimization(AdaGrad.with(0.001, 0.7)).priorDeviation(1.0).numSamples(5).build(); */
@@ -269,8 +278,9 @@ public class Main {
         // Initialize BAM algorithms
         Algorithm bam = BAM.builder()
                 .taskSource(task_source)
-                .dynamicsOptimization(Momentum.with(0.01, 0.5))
+                // .dynamicsOptimization(Momentum.with(0.01, 0.5))
                 // .dynamicsOptimization(AdaGrad.with(1.0, 0.7))
+                .dynamicsOptimization(Adam.with(0.01, 0.8, 0.8, 0.05))
                 .planningAlgorithm(BoltzmannPlanner.algorithm( 1.0))
                 .actionModel(action_model)
                 .taskUpdates(10)
@@ -282,8 +292,9 @@ public class Main {
         // Initialize model-based algorithms
         Algorithm model = ModelBased.builder()
                 .taskSource(task_source)
-                .dynamicsOptimization(Momentum.with(0.01, 0.5))
+                //.dynamicsOptimization(Momentum.with(0.01, 0.5))
                 // .dynamicsOptimization(AdaGrad.with(1.0, 0.7))
+                .dynamicsOptimization(Adam.with(0.01, 0.8, 0.8, 0.05))
                 .planningAlgorithm(BoltzmannPlanner.algorithm(1.0))
                 .actionModel(action_model)
                 .taskUpdates(400)
@@ -298,8 +309,9 @@ public class Main {
                 .build();
 
         // Initialize experiment
-        MultiTaskExperiment experiment = MultiTaskExperiment.builder()
+        MultiTaskDemoExperiment experiment = MultiTaskDemoExperiment.builder()
                 .environments(center_block, center_wall, two_rooms)
+                // .environments(flip)
                 .algorithms(bam, model, cloning)
                 .numSessions(10)
                 .maxDemonstrations(10)

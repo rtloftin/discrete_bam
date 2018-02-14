@@ -146,9 +146,9 @@ public class GravityEnvironment implements Environment {
 
         Shape[] shapes = new Shape[4];
         shapes[GravityWorld.NORTH] = new Polygon(new int[] {0, GravityWorld.SCALE / 2, GravityWorld.SCALE},
-                new int[]{GravityWorld.SCALE, 0, GravityWorld.SCALE}, 3);
-        shapes[GravityWorld.SOUTH] = new Polygon(new int[] {0, GravityWorld.SCALE / 2, GravityWorld.SCALE},
                 new int[]{0, GravityWorld.SCALE, 0}, 3);
+        shapes[GravityWorld.SOUTH] = new Polygon(new int[] {0, GravityWorld.SCALE / 2, GravityWorld.SCALE},
+                new int[]{GravityWorld.SCALE, 0, GravityWorld.SCALE}, 3);
         shapes[GravityWorld.EAST] = new Polygon(new int[]{0, GravityWorld.SCALE, 0},
                 new int[] {0, GravityWorld.SCALE / 2, GravityWorld.SCALE}, 3);
         shapes[GravityWorld.WEST] = new Polygon(new int[]{GravityWorld.SCALE, 0, GravityWorld.SCALE},

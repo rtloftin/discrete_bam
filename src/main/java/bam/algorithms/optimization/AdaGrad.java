@@ -46,7 +46,7 @@ public class AdaGrad implements Optimization {
     public JSONObject serialize() throws JSONException {
         return new JSONObject()
                 .put("name", name())
-                .put("bam.deprecated.learning rate", learning_rate)
+                .put("learning rate", learning_rate)
                 .put("offset", offset);
     }
 }

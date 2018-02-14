@@ -34,9 +34,9 @@ public class GravityDynamics implements Dynamics {
 
                     for(int action = 0; action < num_actions; ++action) {
                         if(action != GravityWorld.BLOCKED[grav])
-                            successors[state][action][1] = offset + grid.next(cell, action);
+                            successors[state][action][0] = offset + grid.next(cell, action);
                         else
-                            successors[state][action][1] = state;
+                            successors[state][action][0] = state;
                     }
                 }
             }
@@ -49,9 +49,9 @@ public class GravityDynamics implements Dynamics {
 
                     for(int action = 0; action < num_actions; ++action) {
                         if(action != GravityWorld.BLOCKED[change])
-                            successors[state][action][1] = offset + grid.next(cell, action);
+                            successors[state][action][0] = offset + grid.next(cell, action);
                         else
-                            successors[state][action][1] = offset + cell;
+                            successors[state][action][0] = offset + cell;
                     }
                 }
             }

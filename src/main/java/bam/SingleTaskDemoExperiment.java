@@ -13,15 +13,12 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.PrintStream;
 import java.util.*;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.ThreadLocalRandom;
+import java.util.concurrent.*;
 
 /**
  * Used to conduct experiments in which
- * the algorithms is trained to perform multiple
- * tasks through demonstration.  Records
+ * the algorithms is trained to perform a single
+ * task through demonstration.  Records
  * performance as a function of the number
  * of demonstrations, as well as the
  * number of demonstrations required
@@ -29,7 +26,7 @@ import java.util.concurrent.ThreadLocalRandom;
  *
  * Created by Tyler on 10/9/2017.
  */
-public class MultiTaskExperiment {
+public class SingleTaskDemoExperiment {
 
     public static Builder builder() {
         return new Builder();
@@ -75,13 +72,13 @@ public class MultiTaskExperiment {
             return this;
         }
 
-        public MultiTaskExperiment build() {
+        public SingleTaskDemoExperiment build() {
             if(null == environments)
                 throw new RuntimeException("Dumbass!!! - no environments specified");
             if(null == algorithms)
                 throw new RuntimeException("Dumbass!!! - no algorithms specified");
 
-            return new MultiTaskExperiment(this);
+            return new SingleTaskDemoExperiment(this);
         }
     }
 
@@ -94,7 +91,7 @@ public class MultiTaskExperiment {
 
     private ExecutorService pool;
 
-    private MultiTaskExperiment(Builder builder) {
+    private SingleTaskDemoExperiment(Builder builder) {
         this.environments = builder.environments;
         this.algorithms = builder.algorithms;
         this.num_sessions = builder.num_sessions;
@@ -164,14 +161,16 @@ public class MultiTaskExperiment {
     }
 
     private Session session(Environment environment,
-                            Map<String, Expert> experts,
+                            Task task,
+                            Expert expert,
                             Algorithm algorithm) {
 
         // Get random number generator
         Random random = ThreadLocalRandom.current();
 
-        // Initialize algorithms
+        // Initialize learning agent
         Agent agent = algorithm.agent(environment.representation());
+        agent.task(task.name());
 
         // Get environment dynamics
         Dynamics dynamics = environment.dynamics();
@@ -183,43 +182,29 @@ public class MultiTaskExperiment {
         // Generate Demonstrations
         for(int demonstration = 0; demonstration < max_demonstrations; ++demonstration) {
 
-            // One demonstration for each task
-            for(Task task : environment.tasks()) {
+            // Get initial state
+            int state = task.initial(random);
 
-                // Get the agent for the current task
-                Expert expert = experts.get(task.name());
+            // Generate trajectory
+            for(int step = 0; step < environment.dynamics().depth(); ++step) {
 
-                // Tell the agent what the current task is
-                agent.task(task.name());
+                // Get next action
+                int action = expert.action(state, random);
+                agent.observe(TeacherAction.of(state, action));
 
-                // Get initial state
-                int state = task.initial(random);
-
-                // Generate trajectory
-                for(int step = 0; step < environment.dynamics().depth(); ++step) {
-
-                    // Get next action
-                    int action = expert.action(state, random);
-                    agent.observe(TeacherAction.of(state, action));
-
-                    // Update state
-                    int next_state = dynamics.transition(state, action, random);
-                    agent.observe(StateTransition.of(state, action, next_state));
-                    state = next_state;
-                }
+                // Update state
+                int next_state = dynamics.transition(state, action, random);
+                agent.observe(StateTransition.of(state, action, next_state));
+                state = next_state;
             }
 
-            // Integrate the new demonstrations
+            // Integrate the new demonstration
             agent.integrate();
 
             // Evaluate policy
-            for(Task task : environment.tasks()) {
-                agent.task(task.name());
-
-                for(int episode = 0; episode < evaluation_episodes; ++episode)
-                    rewards[demonstration] += dynamics
-                            .simulate(agent, task, task.initial(random), dynamics.depth(), random);
-            }
+            for(int episode = 0; episode < evaluation_episodes; ++episode)
+                rewards[demonstration] += dynamics
+                        .simulate(agent, task, task.initial(random), dynamics.depth(), random);
 
             rewards[demonstration] /= evaluation_episodes;
         }
@@ -228,48 +213,47 @@ public class MultiTaskExperiment {
     }
 
     private Condition condition(Environment environment,
-                                Map<String, Expert> experts,
+                                Task task,
+                                Expert expert,
                                 Algorithm algorithm,
                                 Log log) throws Exception {
-        log.write("starting condition, environment: " + environment.name() + ", algorithm: " + algorithm.name());
+        log.write("starting condition, environment: " + environment.name()
+                + ", task: " + task.name() + ", algorithm: " + algorithm.name());
 
         // Launch sessions
         List<Future<Session>> threads = new ArrayList<>();
 
         for(int session = 0; session < num_sessions; ++session)
-            threads.add(pool.submit(() -> session(environment, experts, algorithm)));
+            threads.add(pool.submit(() -> session(environment, task, expert, algorithm)));
 
         // Join sessions
-        LinkedList<Session> sessions = new LinkedList<>();
+        List<Session> sessions = new ArrayList<>();
 
         for (int session = 0; session < num_sessions; ++session) {
             sessions.add(threads.get(session).get());
-            log.write("completed session " + session + ", environment: "
-                    + environment.name() + ", algorithm: " + algorithm.name());
+            log.write("completed session " + session+ ", environment: "
+                    + environment.name() + ", task: " + task.name() + ", algorithm: " + algorithm.name());
         }
 
-        log.write("completed condition, environment: " + environment.name() + ", algorithm: " + algorithm.name());
+        log.write("completed condition, environment: " + environment.name()
+                + ", task: " + task.name() + ", algorithm: " + algorithm.name());
 
         // Return results
         return this.new Condition(sessions, algorithm.name());
     }
 
-    private int experiment(Environment environment, File folder, Log log) throws Exception {
+    private int experiment(Environment environment, Task task, File folder, Log log) throws Exception {
 
-        // Build experts
-        Map<String, Expert> experts = new HashMap<>();
-
-        for(Task task : environment.tasks())
-            experts.put(task.name(), Expert.with(environment.dynamics(), task));
+        // Build expert
+        Expert expert = Expert.with(environment.dynamics(), task);
 
         // Compute expert performance
         Dynamics dynamics = environment.dynamics();
         double expert_performance = 0.0;
 
-        for(Task task : environment.tasks())
-            for(int episode = 0; episode < evaluation_episodes; ++episode)
-                expert_performance += dynamics.simulate(experts.get(task.name()), task,
-                        task.initial(ThreadLocalRandom.current()), dynamics.depth(), ThreadLocalRandom.current());
+        for(int episode = 0; episode < evaluation_episodes; ++episode)
+            expert_performance += dynamics.simulate(expert, task, task.initial(ThreadLocalRandom.current()),
+                    dynamics.depth(), ThreadLocalRandom.current());
 
         expert_performance /= evaluation_episodes;
 
@@ -277,10 +261,9 @@ public class MultiTaskExperiment {
         Baseline baseline = Baseline.with(dynamics);
         double baseline_performance = 0.0;
 
-        for(Task task : environment.tasks())
-            for(int episode = 0; episode < evaluation_episodes; ++episode)
-                baseline_performance += dynamics.simulate(baseline, task,
-                        task.initial(ThreadLocalRandom.current()), dynamics.depth(), ThreadLocalRandom.current());
+        for(int episode = 0; episode < evaluation_episodes; ++episode)
+            baseline_performance += dynamics.simulate(baseline, task,
+                    task.initial(ThreadLocalRandom.current()), dynamics.depth(), ThreadLocalRandom.current());
 
         baseline_performance /= evaluation_episodes;
 
@@ -288,7 +271,7 @@ public class MultiTaskExperiment {
         List<Future<Condition>> threads = new ArrayList<>();
 
         for(Algorithm algorithm : algorithms)
-            threads.add(pool.submit(() -> condition(environment, experts, algorithm, log)));
+            threads.add(pool.submit(() -> condition(environment, task, expert, algorithm, log)));
 
         // Join conditions
         List<Condition> conditions = new ArrayList<>();
@@ -341,10 +324,13 @@ public class MultiTaskExperiment {
         rewards.table(folder);
 
         // Save visualizations
-        for(Condition condition : conditions)
-            for(Visualization visualization : condition.best.agent.visualizations())
+        for(Condition condition : conditions) {
+
+            for (Visualization visualization : condition.best.agent.visualizations())
                 ImageIO.write(visualization.image, "png",
                         new File(folder, condition.name + "_" + visualization.name + ".png"));
+
+        }
 
         return 0;
     }
@@ -363,7 +349,7 @@ public class MultiTaskExperiment {
 
         // Initialize log
         Log log = Log.combined(new File(root, "log"));
-        log.write("started multitask experiment");
+        log.write("started single task experiment");
 
         // Save configuration data
         JSONArray algs = new JSONArray();
@@ -377,7 +363,7 @@ public class MultiTaskExperiment {
             envs.put(environment.serialize());
 
         JSONObject json = new JSONObject()
-                .put("name", "multitask experiment")
+                .put("name", "single task demonstration experiment")
                 .put("class", this.getClass().getCanonicalName())
                 .put("num sessions", num_sessions)
                 .put("max demonstrations", max_demonstrations)
@@ -394,7 +380,9 @@ public class MultiTaskExperiment {
             environment.render().ifPresent((BufferedImage img) -> {
                 try {
                     ImageIO.write(img, "png", new File(root, environment.name() + ".png"));
-                } catch(Exception e) { log.write(e.getMessage()); }
+                } catch (Exception e) {
+                    log.write(e.getMessage());
+                }
             });
 
         // Run experiment
@@ -404,12 +392,17 @@ public class MultiTaskExperiment {
             File env_root = new File(root, environment.name());
             env_root.mkdir();
 
-            experiments.add(pool.submit(() -> experiment(environment, env_root, log)));
+            for(Task task : environment.tasks()) {
+                File task_root = new File(env_root, task.name());
+                task_root.mkdir();
+
+                experiments.add(pool.submit(() -> experiment(environment, task, task_root, log)));
+            }
         }
 
         for(Future experiment : experiments)
             experiment.get();
 
-        log.write("multitask experiment complete");
+        log.write("single task experiment complete");
     }
 }
