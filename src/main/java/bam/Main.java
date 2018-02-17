@@ -262,14 +262,16 @@ public class Main {
         Environment three_rooms = GridWorld.threeRooms(NavGrid.FOUR);
 
         Environment flip = GravityWorld.flip();
+        Environment medium_flip = GravityWorld.medium_flip();
+        Environment large_flip = GravityWorld.large_flip();
 
         // Action Model
         ActionModel action_model = NormalizedActionModel.beta(1.0);
 
         // Task source
         Variational task_source = PointDensity.builder()
-                //.optimization(Momentum.with(0.01, 0.5))
-                .optimization(Adam.with(0.01, 0.8, 0.8, 0.05))
+                .optimization(Momentum.with(0.01, 0.5))
+                // .optimization(Adam.with(0.01, 0.8, 0.8, 0.05))
                 .build();
 
         /* Variational task_source = GaussianDensity.builder()
@@ -278,13 +280,13 @@ public class Main {
         // Initialize BAM algorithms
         Algorithm bam = BAM.builder()
                 .taskSource(task_source)
-                // .dynamicsOptimization(Momentum.with(0.01, 0.5))
+                .dynamicsOptimization(Momentum.with(0.01, 0.5))
                 // .dynamicsOptimization(AdaGrad.with(1.0, 0.7))
-                .dynamicsOptimization(Adam.with(0.01, 0.8, 0.8, 0.05))
+                // .dynamicsOptimization(Adam.with(0.01, 0.8, 0.8, 0.05))
                 .planningAlgorithm(BoltzmannPlanner.algorithm( 1.0))
                 .actionModel(action_model)
-                .taskUpdates(10)
-                .dynamicsUpdates(10)
+                .taskUpdates(20)
+                .dynamicsUpdates(20)
                 .emUpdates(40)
                 .useTransitions(true)
                 .build();
@@ -292,9 +294,9 @@ public class Main {
         // Initialize model-based algorithms
         Algorithm model = ModelBased.builder()
                 .taskSource(task_source)
-                //.dynamicsOptimization(Momentum.with(0.01, 0.5))
+                .dynamicsOptimization(Momentum.with(0.01, 0.5))
                 // .dynamicsOptimization(AdaGrad.with(1.0, 0.7))
-                .dynamicsOptimization(Adam.with(0.01, 0.8, 0.8, 0.05))
+                // .dynamicsOptimization(Adam.with(0.01, 0.8, 0.8, 0.05))
                 .planningAlgorithm(BoltzmannPlanner.algorithm(1.0))
                 .actionModel(action_model)
                 .taskUpdates(400)
@@ -310,9 +312,13 @@ public class Main {
 
         // Initialize experiment
         MultiTaskDemoExperiment experiment = MultiTaskDemoExperiment.builder()
-                .environments(center_block, center_wall, two_rooms)
+                // .environments(empty, center_block, center_wall, two_rooms)
+                // .environments(center_block, two_rooms, three_rooms)
                 // .environments(flip)
-                .algorithms(bam, model, cloning)
+                .environments(medium_flip)
+                // .environments(large_flip)
+                //.algorithms(bam, model, cloning)
+                .algorithms(bam)
                 .numSessions(10)
                 .maxDemonstrations(10)
                 .evaluationEpisodes(50)

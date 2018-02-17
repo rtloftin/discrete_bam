@@ -134,6 +134,10 @@ public class NormalizedActionModel implements ActionModel {
     @Override
     public void gradient(int action, double[] values, double[] gradient, double weight) {
 
+        for(int i=0; i < values.length; ++i)
+            if(!Double.isFinite(values[i]))
+                throw new RuntimeException("Normalized action model, invalid action values provided: " + Arrays.toString(values));
+
         // Compute the differences between the mean value and each individual value
         double[] deltas = deltas(values, mean(values));
 
@@ -161,6 +165,9 @@ public class NormalizedActionModel implements ActionModel {
                 jacobian[a] += beta / deviation;
 
             gradient[a] += weight * jacobian[a];
+
+            if(!Double.isFinite(gradient[a]))
+                throw new RuntimeException("Normalized action model, invalid gradient generated");
         }
     }
 

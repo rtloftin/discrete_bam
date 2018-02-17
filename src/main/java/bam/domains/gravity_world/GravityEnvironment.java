@@ -35,7 +35,7 @@ public class GravityEnvironment implements Environment {
         this.colors = colors;
         this.gravity = gravity;
 
-        depth = 8 * (grid.width() + grid.height());
+        depth = 4 * (grid.width() + grid.height());
 
         tasks = new LinkedList<>();
 

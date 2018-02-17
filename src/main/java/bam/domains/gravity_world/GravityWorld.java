@@ -72,6 +72,40 @@ public class GravityWorld {
         return environment;
     }
 
+    public static Environment medium_flip() {
+
+        // Initialize navigation grid
+        NavGrid grid = new NavGrid(10, 10, NavGrid.FOUR);
+
+        // Set cell colors
+        int[][] colors = new int[grid.height()][grid.width()];
+
+        for(int row = 0; row < grid.height(); ++row)
+            Arrays.fill(colors[row], CLEAR);
+
+        colors[0][1] = ORANGE;
+        colors[0][4] = ORANGE;
+        colors[0][8] = ORANGE;
+
+        colors[9][1] = GREEN;
+        colors[9][4] = GREEN;
+        colors[9][8] = GREEN;
+
+        // Set gravity mapping
+        int[] gravity = new int[CLEAR];
+        gravity[ORANGE] = NORTH;
+        gravity[GREEN] = SOUTH;
+
+        // Build environment
+        GravityEnvironment environment = new GravityEnvironment("medium-flip", grid, colors, gravity);
+
+        // Define goals
+        environment.addGoal("left", 4, 0);
+        environment.addGoal("right", 4, 9);
+
+        return environment;
+    }
+
     public static Environment large_flip() {
 
         // Initialize navigation grid
@@ -105,4 +139,5 @@ public class GravityWorld {
 
         return environment;
     }
+
 }

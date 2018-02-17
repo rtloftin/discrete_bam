@@ -124,6 +124,14 @@ public class PointDensity implements Variational {
             // Update parameters
             optimizer.update(parameters, gradient);
 
+            // Clip parameters
+            for(int i=0; i < dimensions; ++i) {
+                if(parameters[i] > 3 * config.prior_deviation)
+                    parameters[i] = 3 * config.prior_deviation;
+                else if(parameters[i] < -3 * config.prior_deviation)
+                    parameters[i] = -3 * config.prior_deviation;
+            }
+
             // Reset gradient
             Arrays.fill(gradient, 0.0);
         }

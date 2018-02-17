@@ -242,6 +242,10 @@ public class BoltzmannPlanner implements Planner {
                             double prop = DQ[depth + 1][start][action] * dist[end];
                             double weight = prop * V[depth][next[end]];
 
+
+                            if(!Double.isFinite(weight))
+                                throw new RuntimeException("Boltzmann Planner: training weight was invalid, backwards value: " + prop + ", forwards value: " + V[depth][next[end]]);
+
                             // Backpropagate log transition
                             dynamics.train(depth + 1, start, action, next[end], weight);
 

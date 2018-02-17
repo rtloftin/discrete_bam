@@ -51,7 +51,7 @@ public class GravityModel implements DynamicsModel {
 
     @Override
     public void initialize(Optimization optimization) {
-        Arrays.fill(parameters, 0.25); // Initially uniform
+        Arrays.fill(parameters, 0.0); // Initially uniform
         Arrays.fill(gradient, 0.0);
 
         optimizer = optimization.instance(parameters.length);
@@ -59,6 +59,10 @@ public class GravityModel implements DynamicsModel {
 
     @Override
     public void train(int start, int action, int end, double weight) {
+
+        if(!Double.isFinite(weight))
+            throw new RuntimeException("Gravity Model: training weight was invalid");
+
         int cell = start % grid.numCells();
         int row = grid.row(cell);
         int column = grid.column(cell);
@@ -70,13 +74,18 @@ public class GravityModel implements DynamicsModel {
             double partition = 0.0;
 
             for(int grav = 0; grav < 4; ++grav)
-                partition += Math.exp(parameters[offset + grav]);
+                partition += Math.exp(parameters[offset + grav] - parameters[offset]);
+
+            if(!Double.isFinite(partition))
+                throw new RuntimeException("Gravity Model Training: encountered NaN, " + Arrays.toString(parameters));
 
             for(int grav = 0; grav < 4; ++grav) {
+                double probability = Math.exp(parameters[offset + grav] - parameters[offset]) / partition;
+
                 if(grav != gravity)
-                    gradient[offset + grav] += weight * (1.0 - Math.exp(parameters[offset + grav]) / partition);
+                    gradient[offset + grav] += weight * (1.0 - probability);
                 else
-                    gradient[offset + grav] -= weight * Math.exp(parameters[offset + grav]) / partition;
+                    gradient[offset + grav] -= weight * probability;
             }
         }
     }
@@ -88,8 +97,20 @@ public class GravityModel implements DynamicsModel {
         if (null == optimizer)
             throw new RuntimeException("Optimization algorithm not initialized");
 
+        // Incorporate regularization term
+        for(int i = 0; i < parameters.length; ++i)
+            gradient[i] -= parameters[i];
+
         // Perform update
         optimizer.update(parameters, gradient);
+
+        // Clip parameters
+        for(int i = 0; i < parameters.length; ++i){
+            if(parameters[i] > 50.0)
+                parameters[i] = 50.0;
+            else if(parameters[i] < -50.0)
+                parameters[i] = -50.0;
+        }
 
         // Reset gradient
         Arrays.fill(gradient, 0.0);
@@ -156,6 +177,9 @@ public class GravityModel implements DynamicsModel {
             probable[gravity] = Math.exp(parameters[offset + gravity] - parameters[offset]);
             partition += probable[gravity];
         }
+
+        if(!Double.isFinite(partition))
+            throw new RuntimeException("Gravity Model Transition: encountered NaN");
 
         for(int gravity = 0; gravity < 4; ++gravity)
             probable[gravity] /= partition;

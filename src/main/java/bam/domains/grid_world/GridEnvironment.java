@@ -32,7 +32,7 @@ public class GridEnvironment implements Environment {
         this.grid = grid;
         this.map = map;
 
-        depth = 6 * (grid.width() + grid.height());
+        depth = 2 * (grid.width() + grid.height());
 
         tasks = new LinkedList<>();
 
