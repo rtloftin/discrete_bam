@@ -140,4 +140,65 @@ public class GravityWorld {
         return environment;
     }
 
+    public static Environment wall() {
+
+        // Initialize navigation grid
+        NavGrid grid = new NavGrid(5, 5, NavGrid.FOUR);
+
+        // Set cell colors
+        int[][] colors = new int[grid.height()][grid.width()];
+
+        for(int row = 0; row < grid.height(); ++row)
+            Arrays.fill(colors[row], CLEAR);
+
+        colors[1][2] = GREEN;
+        colors[2][2] = GREEN;
+        colors[3][2] = GREEN;
+
+        // Set gravity mapping
+        int[] gravity = new int[CLEAR];
+        gravity[GREEN] = EAST;
+
+        // Build environment
+        GravityEnvironment environment = new GravityEnvironment("wall", grid, colors, gravity);
+
+        // Define goals
+        environment.addGoal("top-left", 0, 0);
+        environment.addGoal("bottom-left", 4, 0);
+
+        return environment;
+    }
+
+    public static Environment choices() {
+        // Initialize navigation grid
+        NavGrid grid = new NavGrid(15, 4, NavGrid.FOUR);
+
+        // Set cell colors
+        int[][] colors = new int[grid.height()][grid.width()];
+
+        for(int row = 0; row < grid.height(); ++row)
+            Arrays.fill(colors[row], CLEAR);
+
+        colors[0][4] = ORANGE;
+        colors[0][10] = ORANGE;
+
+        colors[0][1] = GREEN;
+        colors[0][13] = PURPLE;
+
+        // Set gravity mapping
+        int[] gravity = new int[CLEAR];
+        gravity[ORANGE] = SOUTH;
+        gravity[GREEN] = NORTH;
+        gravity[PURPLE] = NORTH;
+
+        // Build environment
+        GravityEnvironment environment = new GravityEnvironment("choices", grid, colors, gravity);
+
+        // Define goals
+        environment.addGoal("bottom-left", 3, 0);
+        environment.addGoal("bottom-right", 3, 14);
+
+        return environment;
+    }
+
 }

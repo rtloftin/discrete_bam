@@ -45,10 +45,10 @@ public class Main {
         Util.setPreference("root", root.get().getPath());
 
         // singleTaskDemoExperiment(root.get());
-        // multiTaskDemoExperiment(root.get());
+        multiTaskDemoExperiment(root.get());
 
         // cloningTest(root.get());
-        bamTest(root.get());
+        // bamTest(root.get());
     }
 
     /////////////////////////////////////////////////////////////////////////
@@ -140,6 +140,13 @@ public class Main {
         Environment two_rooms = GridWorld.twoRooms(NavGrid.FOUR);
         Environment three_rooms = GridWorld.threeRooms(NavGrid.FOUR);
 
+        Environment flip = GravityWorld.flip();
+        Environment medium_flip = GravityWorld.medium_flip();
+        Environment large_flip = GravityWorld.large_flip();
+
+        Environment wall = GravityWorld.wall();
+        Environment choices = GravityWorld.choices();
+
         // Action Model
         ActionModel action_model = NormalizedActionModel.beta(1.0);
 
@@ -153,7 +160,7 @@ public class Main {
         // Initialize BAM algorithms
         Algorithm bam = BAM.builder()
                 .taskSource(task_source)
-                .dynamicsOptimization(Momentum.with(0.1, 0.5))
+                .dynamicsOptimization(Momentum.with(0.01, 0.5))
                 // .dynamicsOptimization(AdaGrad.with(1.0, 0.7))
                 .planningAlgorithm(BoltzmannPlanner.algorithm( 1.0))
                 .actionModel(action_model)
@@ -189,8 +196,11 @@ public class Main {
 
         // Initialize experiment
         MultiTaskDemoExperiment experiment = MultiTaskDemoExperiment.builder()
-                .environments(empty, center_block, center_wall, two_rooms, three_rooms)
-                .algorithms(bam, model, cloning, irl)
+                // .environments(empty, center_block, center_wall, two_rooms, three_rooms)
+                // .environments(flip, medium_flip)
+                .environments(wall, choices)
+                // .algorithms(bam, model, cloning, irl)
+                .algorithms(bam, model, cloning)
                 .numSessions(50)
                 .maxDemonstrations(10)
                 .evaluationEpisodes(50)
