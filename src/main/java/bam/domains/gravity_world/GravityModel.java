@@ -83,9 +83,9 @@ public class GravityModel implements DynamicsModel {
                 double probability = Math.exp(parameters[offset + grav] - parameters[offset]) / partition;
 
                 if(grav != gravity)
-                    gradient[offset + grav] += weight * (1.0 - probability);
-                else
                     gradient[offset + grav] -= weight * probability;
+                else
+                    gradient[offset + grav] += weight * (1.0 - probability);
             }
         }
     }
