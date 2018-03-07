@@ -1,9 +1,7 @@
 package bam.algorithms.planning;
 
-import bam.Dynamics;
-import bam.DynamicsModel;
-import bam.Reward;
-import bam.RewardMapping;
+import bam.algorithms.Dynamics;
+import bam.algorithms.Reward;
 import org.json.JSONException;
 import org.json.JSONObject;
 

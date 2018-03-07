@@ -1,5 +1,6 @@
-package bam;
+package bam.domains;
 
+import bam.algorithms.Reward;
 import org.json.JSONException;
 import org.json.JSONObject;
 

@@ -4,6 +4,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.Arrays;
+import java.util.function.Consumer;
 
 /**
  * Implements the Adam update strategy.
@@ -27,10 +28,10 @@ public class Adam implements Optimizer {
     }
 
     @Override
-    public Parameters parameters(double[] initial) {
-        double[] parameters = new double[initial.length];
-        double[] first_moment = new double[initial.length];
-        double[] second_moment = new double[initial.length];
+    public Parameters parameters(int size, Consumer<double[]> initializer) {
+        double[] parameters = new double[size];
+        double[] first_moment = new double[size];
+        double[] second_moment = new double[size];
 
         return new Parameters() {
 
@@ -38,7 +39,7 @@ public class Adam implements Optimizer {
 
             @Override
             public void initialize() {
-                System.arraycopy(initial, 0, parameters, 0, initial.length);
+                initializer.accept(parameters);
                 Arrays.fill(first_moment, 0.0);
                 Arrays.fill(second_moment, 0.0);
             }

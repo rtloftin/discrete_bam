@@ -3,6 +3,8 @@ package bam.algorithms.new_optimization;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.util.function.Consumer;
+
 /**
  * Implements the basic gradient ascent optimization strategy.
  */
@@ -19,17 +21,15 @@ public class GradientAscent implements Optimizer {
     }
 
     @Override
-    public Parameters parameters(double[] initial) {
-        double[] parameters = new double[initial.length];
+    public Parameters parameters(int size, Consumer<double[]> initializer) {
+        double[] parameters = new double[size];
 
         return new Parameters() {
 
             { initialize(); }
 
             @Override
-            public void initialize() {
-                System.arraycopy(initial, 0, parameters, 0, initial.length);
-            }
+            public void initialize() { initializer.accept(parameters); }
 
             @Override
             public void update(double[] gradient) {

@@ -4,6 +4,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.Arrays;
+import java.util.function.Consumer;
 
 /**
  * Implements gradient ascent with momentum.
@@ -23,9 +24,9 @@ public class Momentum implements Optimizer {
     }
 
     @Override
-    public Parameters parameters(double[] initial) {
-        double[] parameters = new double[initial.length];
-        double[] delta = new double[initial.length];
+    public Parameters parameters(int size, Consumer<double[]> initializer) {
+        double[] parameters = new double[size];
+        double[] delta = new double[size];
 
         return new Parameters() {
 
@@ -33,7 +34,7 @@ public class Momentum implements Optimizer {
 
             @Override
             public void initialize() {
-                System.arraycopy(initial, 0, parameters, 0, initial.length);
+                initializer.accept(parameters);
                 Arrays.fill(delta, 0.0);
             }
 

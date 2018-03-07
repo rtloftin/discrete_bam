@@ -1,4 +1,4 @@
-package bam;
+package bam.algorithms;
 
 /**
  * A simple class representing a state transition.

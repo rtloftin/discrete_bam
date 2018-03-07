@@ -1,6 +1,6 @@
 package bam.domains.gravity_world;
 
-import bam.Dynamics;
+import bam.algorithms.Dynamics;
 import bam.domains.NavGrid;
 
 public class GravityDynamics implements Dynamics {

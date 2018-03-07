@@ -30,4 +30,21 @@ public interface Parameters {
      * @return an array containing the parameter values.
      */
     double[] value();
+
+    /**
+     * Clips each dimension of the vector to the specified range.
+     *
+     * @param min the minimum parameter value allowed
+     * @param max the maximum parameter value allowed
+     */
+    default void clip(double min, double max) {
+        double[] value = value();
+
+        for(int i=0; i < value.length; ++i) {
+            if(value[i] < min)
+                value[i] = min;
+            else if(value[i] > max)
+                value[i] = max;
+        }
+    }
 }

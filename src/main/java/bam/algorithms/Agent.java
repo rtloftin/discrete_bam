@@ -1,8 +1,7 @@
-package bam;
+package bam.algorithms;
 
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Random;
 
 /**
  * Represents a multitask learning

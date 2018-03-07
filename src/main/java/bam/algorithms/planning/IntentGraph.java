@@ -1,7 +1,7 @@
 package bam.algorithms.planning;
 
-import bam.Dynamics;
-import bam.RewardMapping;
+import bam.algorithms.Dynamics;
+import bam.algorithms.RewardMapping;
 
 import java.util.Arrays;
 import java.util.function.Consumer;

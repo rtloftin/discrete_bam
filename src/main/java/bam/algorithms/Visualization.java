@@ -1,4 +1,4 @@
-package bam;
+package bam.algorithms;
 
 import java.awt.image.BufferedImage;
 

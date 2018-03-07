@@ -1,11 +1,8 @@
 package bam.algorithms;
 
-import bam.*;
-import bam.TeacherFeedback;
 import bam.algorithms.feedback.FeedbackModel;
 import bam.algorithms.feedback.NoFeedback;
 import bam.algorithms.optimization.Optimization;
-import bam.DynamicsModel;
 import bam.algorithms.planning.ModelGraph;
 import bam.algorithms.planning.Planner;
 import bam.algorithms.planning.PlanningAlgorithm;

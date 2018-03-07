@@ -3,6 +3,9 @@ package bam.algorithms.new_optimization;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.util.Arrays;
+import java.util.function.Consumer;
+
 /**
  * Represents a first order gradient
  * ascent optimization algorithm, and
@@ -15,16 +18,41 @@ public interface Optimizer {
     /**
      * Creates a new parameter vector, which
      * will be updated according to the optimization
-     * strategy defined by this object.  Sets the
-     * initial values of the parameter vector to
-     * the values in the provided array.  The
-     * vector will be of the same length as the
-     * array of initial values.
+     * strategy defined by this object.
      *
-     * @param initial the initial values for the vector, also defines the size.
-     * @return an initialized parameter vector.
+     * @param size the number of parameters
+     * @param initializer a function that initializes the parameters
+     * @return the parameter vector
      */
-    Parameters parameters(double[] initial);
+    Parameters parameters(int size, Consumer<double[]> initializer);
+
+    /**
+     * Creates a new parameter vector, which
+     * will be updated according to the optimization
+     * strategy defined by this object.
+     *
+     * @param size the number of parameters
+     * @param initial an array of initial values for the parameters
+     * @return the parameter vector
+     */
+    default Parameters parameters(int size, double[] initial) {
+        return parameters(size, (double[] parameters) -> {
+            System.arraycopy(initial, 0, parameters, 0, parameters.length);
+        });
+    }
+
+    /**
+     * Creates a new parameter vector, which
+     * will be updated according to the optimization
+     * strategy defined by this object.  Parameters
+     * will always be initialized to zero.
+     *
+     * @param size the number of parameters
+     * @return the parameter vector
+     */
+    default Parameters parameters(int size) {
+        return parameters(size, (double[] parameters) -> Arrays.fill(parameters, 0.0));
+    }
 
     /**
      * Gets the name of this optimization strategy.

@@ -1,4 +1,4 @@
-package bam;
+package bam.algorithms;
 
 import bam.algorithms.optimization.Optimization;
 

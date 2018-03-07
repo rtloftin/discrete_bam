@@ -1,6 +1,8 @@
-package bam.util;
+package bam.human;
 
-import java.io.*;
+import java.io.File;
+import java.io.IOException;
+import java.io.PrintStream;
 import java.time.Instant;
 
 /**
@@ -23,7 +25,9 @@ public class Log {
 
     public static Log create(PrintStream... streams) { return new Log(streams); }
 
-    public static Log dummy() { return new Log(); }
+    public static Log dummy() {
+        return new Log();
+    }
 
     public static Log console() { return new Log(new PrintStream(System.out)); }
 
@@ -36,7 +40,7 @@ public class Log {
     public Log write(String message) {
 
         // Create entry
-        String entry = Instant.now() + " " + message;
+        String entry = Instant.now() + " | " + message;
 
         synchronized (this) {
             for(PrintStream stream : streams) {
@@ -49,7 +53,9 @@ public class Log {
     }
 
     public void close() {
-        for(PrintStream stream : streams)
-            stream.close();
+        synchronized (this) {
+            for (PrintStream stream : streams)
+                stream.close();
+        }
     }
 }

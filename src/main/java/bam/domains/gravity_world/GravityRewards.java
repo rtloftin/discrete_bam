@@ -1,6 +1,6 @@
 package bam.domains.gravity_world;
 
-import bam.RewardMapping;
+import bam.algorithms.RewardMapping;
 
 import java.awt.*;
 import java.awt.image.BufferedImage;

@@ -1,6 +1,5 @@
 package bam.algorithms;
 
-import bam.*;
 import bam.algorithms.planning.MaxPlanner;
 import bam.algorithms.action.GreedyActionModel;
 

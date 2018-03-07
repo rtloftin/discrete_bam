@@ -1,4 +1,4 @@
-package bam.util;
+package bam.simulation;
 
 import java.util.ArrayList;
 import java.util.List;

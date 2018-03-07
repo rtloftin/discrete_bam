@@ -1,6 +1,6 @@
 package bam.domains.grid_world;
 
-import bam.Dynamics;
+import bam.algorithms.Dynamics;
 import bam.domains.NavGrid;
 
 class GridDynamics implements Dynamics {

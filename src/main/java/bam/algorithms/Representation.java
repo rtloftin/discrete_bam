@@ -1,4 +1,4 @@
-package bam;
+package bam.algorithms;
 
 /**
  * This interface represents a hypothesis space

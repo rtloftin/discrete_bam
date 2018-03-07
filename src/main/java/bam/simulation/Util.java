@@ -1,4 +1,4 @@
-package bam.util;
+package bam.simulation;
 
 import javax.swing.*;
 import java.awt.image.BufferedImage;

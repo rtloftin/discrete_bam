@@ -1,7 +1,7 @@
 package bam.algorithms.planning;
 
-import bam.Dynamics;
-import bam.Reward;
+import bam.algorithms.Dynamics;
+import bam.algorithms.Reward;
 
 /**
  * Combines a set of transition dynamics and

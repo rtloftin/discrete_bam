@@ -1,4 +1,4 @@
-package bam;
+package bam.algorithms;
 
 public interface Reward {
 

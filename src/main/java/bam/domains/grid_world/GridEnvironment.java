@@ -1,9 +1,9 @@
 package bam.domains.grid_world;
 
-import bam.Dynamics;
-import bam.Environment;
-import bam.Representation;
-import bam.Task;
+import bam.algorithms.Dynamics;
+import bam.domains.Environment;
+import bam.algorithms.Representation;
+import bam.domains.Task;
 import bam.domains.NavGrid;
 import org.json.JSONArray;
 import org.json.JSONException;

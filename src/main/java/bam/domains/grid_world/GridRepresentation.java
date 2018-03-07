@@ -1,8 +1,8 @@
 package bam.domains.grid_world;
 
-import bam.DynamicsModel;
-import bam.Representation;
-import bam.RewardMapping;
+import bam.algorithms.DynamicsModel;
+import bam.algorithms.Representation;
+import bam.algorithms.RewardMapping;
 import bam.domains.NavGrid;
 
 class GridRepresentation implements Representation {

@@ -1,6 +1,6 @@
 package bam.domains.grid_world;
 
-import bam.DynamicsModel;
+import bam.algorithms.DynamicsModel;
 import bam.algorithms.optimization.Optimization;
 import bam.domains.NavGrid;
 

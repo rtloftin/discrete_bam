@@ -1,8 +1,5 @@
 package bam.algorithms;
 
-import bam.Dynamics;
-import bam.Policy;
-
 import java.util.Arrays;
 
 public class Baseline implements Policy {

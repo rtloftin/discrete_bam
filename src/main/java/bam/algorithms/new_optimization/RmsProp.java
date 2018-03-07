@@ -4,6 +4,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.Arrays;
+import java.util.function.Consumer;
 
 /**
  * Implements the RMSProp update strategy.
@@ -25,9 +26,9 @@ public class RmsProp implements Optimizer {
     }
 
     @Override
-    public Parameters parameters(double[] initial) {
-        double[] parameters = new double[initial.length];
-        double[] second_moment = new double[initial.length];
+    public Parameters parameters(int size, Consumer<double[]> initializer) {
+        double[] parameters = new double[size];
+        double[] second_moment = new double[size];
 
         return new Parameters() {
 
@@ -35,7 +36,7 @@ public class RmsProp implements Optimizer {
 
             @Override
             public void initialize() {
-                System.arraycopy(initial, 0, parameters, 0, initial.length);
+                initializer.accept(parameters);
                 Arrays.fill(second_moment, 0.0);
             }
 

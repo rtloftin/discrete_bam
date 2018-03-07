@@ -1,5 +1,7 @@
-package bam;
+package bam.domains;
 
+import bam.algorithms.Dynamics;
+import bam.algorithms.Representation;
 import org.json.JSONException;
 import org.json.JSONObject;
 

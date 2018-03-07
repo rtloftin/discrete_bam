@@ -1,6 +1,5 @@
 package bam.algorithms;
 
-import bam.*;
 import bam.algorithms.action.ActionModel;
 import bam.algorithms.action.BoltzmannActionModel;
 import bam.algorithms.action.GreedyActionModel;

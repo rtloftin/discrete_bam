@@ -1,6 +1,6 @@
 package bam.domains.gravity_world;
 
-import bam.Environment;
+import bam.domains.Environment;
 import bam.domains.NavGrid;
 
 import java.util.Arrays;
