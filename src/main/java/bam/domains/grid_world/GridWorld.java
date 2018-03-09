@@ -1,191 +1,220 @@
 package bam.domains.grid_world;
 
+import bam.algorithms.Dynamics;
+import bam.domains.Environment;
+import bam.algorithms.Representation;
+import bam.domains.Task;
 import bam.domains.NavGrid;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 
-/**
- * This class contains static methods for generating
- * grid world environments and learning representations.
- *
- * Created by Tyler on 10/9/2017.
- */
-public class GridWorld {
+import java.awt.*;
+import java.awt.image.BufferedImage;
+import java.util.*;
+import java.util.List;
+
+public class GridWorld implements Environment {
+
+    public class Task implements bam.domains.Task {
+
+        private final int row, column;
+        private final String name;
+        private final double[] rewards;
+
+        private Task(String name, int row, int column) {
+            this.name = name;
+            this.row = row;
+            this.column = column;
+
+            // Initialize reward function
+            rewards = new double[grid.numCells()];
+            Arrays.fill(rewards, 0.0);
+
+            // Set goal reward
+            rewards[grid.index(row, column)] = 1.0;
+        }
+
+        @Override
+        public int initial(Random random) {
+            int row, col;
+
+            do {
+                row = random.nextInt(grid.height());
+                col = random.nextInt(grid.width());
+            } while(map[row][col]);
+
+            return grid.index(row, col);
+        }
+
+        @Override
+        public double reward(int state) {
+            return rewards[state];
+        }
+
+        @Override
+        public String name() {
+            return name;
+        }
+
+        @Override
+        public JSONObject serialize() throws JSONException {
+            return new JSONObject()
+                    .put("name", name())
+                    .put("goal row", row)
+                    .put("goal column", column);
+        }
+    }
+
+    private final String name;
+
+    private final boolean[][] map;
+    private final NavGrid grid;
+    private final int depth;
+
+    private final List<Task> tasks;
+
+    private final GridDynamics dynamics;
+    private final GridRepresentation representation;
+
+    GridWorld(String name, NavGrid grid, boolean[][] map) {
+        this.name = name;
+        this.grid = grid;
+        this.map = map;
+
+        depth = 2 * (grid.width() + grid.height());
+
+        tasks = new LinkedList<>();
+
+        dynamics = new GridDynamics(grid, map, depth);
+        representation = new GridRepresentation(grid, depth);
+    }
 
     /**
-     * The size of each grid cell in pixels, for visualization.
-     */
-    static final int SCALE = 40;
-
-    /**
-     * Creates a new grid world with the given occupancy map.
+     * Adds a new task with a goal at the given row and column.
      *
-     * @param name the name of the environment
-     * @param grid the navigation grid defining this environment
-     * @param map the occupancy map of the environment
-     * @return the new grid world
+     * @param name the name of this task
+     * @param row the row of the goal
+     * @param column the column of the goal
      */
-    public static GridEnvironment environment(String name, NavGrid grid, boolean[][] map) {
-        return new GridEnvironment(name, grid, map);
+    public void addGoal(String name, int row, int column) {
+        tasks.add(new Task(name, row, column));
     }
 
-    /////////////////////////////////////////////
-    // Constructors for Predefined Grid Worlds //
-    /////////////////////////////////////////////
-
-    public static GridEnvironment empty(int width, int height, int connections) {
-
-        // Initialize grid
-        NavGrid grid = new NavGrid(width, height, connections);
-
-        // Initialize map
-        boolean[][] map = new boolean[grid.height()][grid.width()];
-
-        for(int i=0; i < map.length; ++i)
-            for(int j=0; j < map[i].length; ++j)
-                map[i][j] = false;
-
-        // Create environment
-        GridEnvironment environment = new GridEnvironment("empty-grid", grid, map);
-
-        // Initialize tasks
-        environment.addGoal("bottom", 0, 4);
-        environment.addGoal("top",8, 4);
-        environment.addGoal("left",4, 0);
-        environment.addGoal("right",4, 8);
-
-        return environment;
+    @Override
+    public Dynamics dynamics() {
+        return dynamics;
     }
 
-    public static GridEnvironment centerBlock(int connections) {
-
-        // Initialize grid
-        NavGrid grid = new NavGrid(9, 9, connections);
-
-        // Initialize map
-        boolean[][] map = new boolean[9][9];
-
-        for(int i=0; i < map.length; ++i)
-            for(int j=0; j < map[i].length; ++j)
-                map[i][j] = false;
-
-        for(int i=3; i < 6; ++i)
-            for(int j=3; j < 6; ++j)
-                map[i][j] = true;
-
-        // Create gridworld
-        GridEnvironment environment = new GridEnvironment("center-block", grid, map);
-
-        // Initialize tasks
-        // environment.addGoal("bottom", 0, 4);
-        environment.addGoal("top",8, 4);
-        // environment.addGoal("left",4, 0);
-        environment.addGoal("right",4, 8);
-
-        return environment;
+    @Override
+    public List<? extends Task> tasks() {
+        return tasks;
     }
 
-    public static GridEnvironment centerWall(int connections) {
-
-        // Initialize grid
-        NavGrid grid = new NavGrid(9, 9, connections);
-
-        // Initialize map
-        boolean[][] map = new boolean[9][9];
-
-        for(int i=0; i < map.length; ++i)
-            for(int j=0; j < map[i].length; ++j)
-                map[i][j] = false;
-
-        for(int i=0; i < 6; ++i)
-            for(int j=3; j < 6; ++j)
-                map[i][j] = true;
-
-        // Create environment
-        GridEnvironment environment = new GridEnvironment("center-wall", grid, map);
-
-        // Initialize tasks
-        environment.addGoal("left", 0, 0);
-        environment.addGoal("right", 0, 8);
-
-        return environment;
+    @Override
+    public Representation representation() {
+        return representation;
     }
 
-    public static GridEnvironment twoRooms(int connections) {
-
-        // Initialize grid
-        NavGrid grid = new NavGrid(15, 8, connections);
-
-        // Initialize map
-        boolean[][] map = new boolean[grid.height()][grid.width()];
-
-        for(int i=0; i < map.length; ++i)
-            for(int j=0; j < map[i].length; ++j)
-                map[i][j] = false;
-
-        for(int i=3; i < 12; ++i) {
-            map[0][i] = true;
-            map[4][i] = true;
-        }
-
-        map[1][7] = true;
-        map[2][7] = true;
-        map[3][7] = true;
-
-        map[1][3] = true;
-        map[3][3] = true;
-        map[1][11] = true;
-        map[3][11] = true;
-
-        // Create environment
-        GridEnvironment environment = new GridEnvironment("two-rooms", grid, map);
-
-        // Initialize tasks
-        environment.addGoal("left",0, 14);
-        environment.addGoal("right", 0, 0);
-        environment.addGoal("inside",2, 5);
-
-        return environment;
+    @Override
+    public String name() {
+        return name;
     }
 
-    public static GridEnvironment threeRooms(int connections) {
+    @Override
+    public JSONObject serialize() throws JSONException {
+        JSONArray json_tasks  =new JSONArray();
 
-        // Initialize grid
-        NavGrid grid = new NavGrid(13, 13, connections);
+        for(Task task : tasks)
+            json_tasks.put(task.serialize());
 
-        // Initialize map
-        boolean[][] map = new boolean[grid.height()][grid.width()];
+        return new JSONObject()
+                .put("name", name())
+                .put("width", grid.width())
+                .put("height", grid.height())
+                .put("actions", grid.numMoves())
+                .put("tasks", json_tasks);
+    }
 
-        for(int i=0; i < map.length; ++i)
-            for(int j=0; j < map[i].length; ++j)
-                map[i][j] = false;
+    @Override
+    public Optional<? extends BufferedImage> render() {
+        BufferedImage image = new BufferedImage(grid.width() * GridWorlds.SCALE,
+                grid.height() * GridWorlds.SCALE, BufferedImage.TYPE_INT_RGB);
+        Graphics2D graphics = image.createGraphics();
 
-        for(int i=2; i < 11; ++i) {
-            map[2][i] = true;
-            map[6][i] = true;
-            map[10][i] = true;
-        }
+        graphics.translate(0, image.getHeight());
+        graphics.scale(1, -1);
 
-        for(int i=2; i < 11; ++i) {
-            map[i][2] = true;
-            map[i][6] = true;
-            map[i][10] = true;
-        }
+        graphics.setPaint(new Color(65,105,225));
+        graphics.fillRect(0, 0, image.getWidth(), image.getHeight());
 
-        map[3][6] = false;
-        map[4][6] = false;
-        map[5][6] = false;
+        graphics.setPaint(new Color(255, 255, 255));
 
-        map[4][2] = false;
-        map[8][2] = false;
-        map[4][10] = false;
-        map[8][10] = false;
+        for(int row = 0; row < grid.height(); ++row)
+            for(int column = 0; column < grid.width(); ++column)
+                if(map[row][column])
+                    graphics.fillRect(column * GridWorlds.SCALE,
+                            row * GridWorlds.SCALE, GridWorlds.SCALE, GridWorlds.SCALE);
 
-        // Create environment
-        GridEnvironment environment = new GridEnvironment("three-rooms", grid, map);
+        return Optional.of(image);
+    }
 
-        // Initialize tasks
-        environment.addGoal("left",6, 0);
-        environment.addGoal("right", 6, 12);
+    //////////////////////////////////////////
+    // Serialization Methods for the Server //
+    //////////////////////////////////////////
 
-        return environment;
+
+    @Override
+    public int parseAction(JSONObject action) throws JSONException {
+        String type = action.getString("type");
+
+        if(type.equals("up"))
+            return NavGrid.UP;
+        if(type.equals("down"))
+            return NavGrid.DOWN;
+        if(type.equals("left"))
+            return NavGrid.LEFT;
+        if(type.equals("right"))
+            return NavGrid.RIGHT;
+
+        return NavGrid.STAY;
+    }
+
+    @Override
+    public int parseState(JSONObject state) throws JSONException {
+        int column = state.getInt("x");
+        int row = state.getInt("y");
+
+        return grid.index(row, column);
+    }
+
+    @Override
+    public JSONObject writeState(int state, int last_action) throws JSONException {
+        int x = grid.column(state);
+        int y = grid.row(state);
+
+        double theta = 0.0;
+
+        if(NavGrid.DOWN == last_action)
+            theta = Math.PI;
+        else if(NavGrid.LEFT == last_action)
+            theta = 0.5 * Math.PI;
+        else if(NavGrid.RIGHT == last_action)
+            theta = -0.5 * Math.PI;
+
+        JSONObject json = new JSONObject();
+        json.put("x", x);
+        json.put("y", y);
+
+        return json;
+    }
+
+    @Override
+    public JSONObject writeLayout(String task) throws JSONException {
+        JSONObject json = new JSONObject();
+
+        // This isn't going to work, need to rethink this
+
+        return null;
     }
 }
