@@ -35,7 +35,7 @@ public class MLIRL implements Agent {
         private boolean reinitialize = false;
 
         // The name of this algorithm
-        private String name = "ML-IRL";
+        private String name = "ML_IRL";
 
         // The planning algorithm we assume the teacher is using
         private PlanningAlgorithm planning_algorithm = null;
@@ -123,6 +123,7 @@ public class MLIRL implements Agent {
                 public JSONObject serialize() throws JSONException {
                     return new JSONObject()
                             .put("name", name())
+                            .put("class", MLIRL.class.getSimpleName())
                             .put("task updates", task_updates)
                             .put("reinitialize", reinitialize)
                             .put("planning algorithm", planning_algorithm.serialize())
@@ -136,6 +137,17 @@ public class MLIRL implements Agent {
 
     public static Builder builder() {
         return new Builder();
+    }
+
+    public static Algorithm load(JSONObject config) throws JSONException {
+        return builder()
+                .taskUpdates(config.getInt("task updates"))
+                .reinitialize(config.getBoolean("reinitialize"))
+                .planningAlgorithm(PlanningAlgorithm.load(config.getJSONObject("Planning Algorithm")))
+                .taskSource(Variational.load(config.getJSONObject("task source")))
+                .actionModel(ActionModel.load(config.getJSONObject("action model")))
+                .feedbackModel(FeedbackModel.load(config.getJSONObject("feedback model")))
+                .build();
     }
 
     private class TaskModel {

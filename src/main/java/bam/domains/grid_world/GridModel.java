@@ -150,8 +150,8 @@ class GridModel implements DynamicsModel {
 
     @Override
     public Optional<BufferedImage> render() {
-        BufferedImage image = new BufferedImage(grid.width() * GridWorld.SCALE,
-                grid.height() * GridWorld.SCALE, BufferedImage.TYPE_INT_RGB);
+        BufferedImage image = new BufferedImage(grid.width() * GridWorlds.SCALE,
+                grid.height() * GridWorlds.SCALE, BufferedImage.TYPE_INT_RGB);
         Graphics2D graphics = image.createGraphics();
 
         graphics.translate(0, image.getHeight());
@@ -162,8 +162,8 @@ class GridModel implements DynamicsModel {
                 float hue = 0.65f * (float)(1.0 - occupied(grid.index(row, column)));
 
                 graphics.setPaint(Color.getHSBColor(hue, 1f, 1f));
-                graphics.fillRect(column * GridWorld.SCALE,
-                        row * GridWorld.SCALE, GridWorld.SCALE, GridWorld.SCALE);
+                graphics.fillRect(column * GridWorlds.SCALE,
+                        row * GridWorlds.SCALE, GridWorlds.SCALE, GridWorlds.SCALE);
             }
 
         return Optional.of(image);

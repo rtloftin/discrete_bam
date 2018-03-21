@@ -51,6 +51,33 @@ public interface Optimization {
      * @throws JSONException
      */
     default JSONObject serialize() throws JSONException {
-        return new JSONObject().put("name", name());
+        return new JSONObject()
+                .put("name", name())
+                .put("class", getClass());
+    }
+
+    /**
+     * Loads an implementation of this interface
+     * from its JSON representation.
+     *
+     * @param config the JSON representation of the object
+     * @return an instance defined by the JSON representation
+     * @throws JSONException
+     */
+    static Optimization load(JSONObject config) throws JSONException {
+        String className = config.getString("class");
+
+        if(className.equals(GradientAscent.class.getSimpleName()))
+            return GradientAscent.load(config);
+        else if(className.equals(Momentum.class.getSimpleName()))
+            return Momentum.load(config);
+        else if(className.equals(AdaGrad.class.getSimpleName()))
+            return AdaGrad.load(config);
+        else if(className.equals(RmsProp.class.getSimpleName()))
+            return RmsProp.load(config);
+        else if(className.equals(Adam.class.getSimpleName()))
+            return Adam.load(config);
+
+        throw new RuntimeException("Unknown Implementation of 'Optimization' requested");
     }
 }

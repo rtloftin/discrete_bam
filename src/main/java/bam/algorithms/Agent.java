@@ -1,7 +1,11 @@
 package bam.algorithms;
 
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Represents a multitask learning
@@ -57,7 +61,7 @@ public interface Agent extends Policy {
      * amount of work, and should incorporate all of the
      * data the agent has received.
      */
-    void integrate();
+    void integrate() throws JSONException;
 
     /**
      * WE NEED TO MAKE THE VISUALIZATION INTERFACE A LITTLE MORE CONSISTENT

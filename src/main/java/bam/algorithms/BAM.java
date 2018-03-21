@@ -159,6 +159,7 @@ public class BAM implements Agent {
                 public JSONObject serialize() throws JSONException {
                     return new JSONObject()
                             .put("name", name())
+                            .put("class", BAM.class.getSimpleName())
                             .put("dynamics updates", dynamics_updates)
                             .put("task updates", task_updates)
                             .put("em updates", em_updates)
@@ -176,6 +177,21 @@ public class BAM implements Agent {
 
     public static Builder builder() {
         return new Builder();
+    }
+
+    public static Algorithm load(JSONObject config) throws JSONException {
+        return builder()
+                .dynamicsUpdates(config.getInt("dynamics updates"))
+                .taskUpdates(config.getInt("task updates"))
+                .emUpdates(config.getInt("em updates"))
+                .useTransitions(config.getBoolean("use transitions"))
+                .reinitialize(config.getBoolean("reinitialize"))
+                .dynamicsOptimization(Optimization.load(config.getJSONObject("dynamics optimization")))
+                .planningAlgorithm(PlanningAlgorithm.load(config.getJSONObject("planning algorithm")))
+                .taskSource(Variational.load(config.getJSONObject("task source")))
+                .actionModel(ActionModel.load(config.getJSONObject("action model")))
+                .feedbackModel(FeedbackModel.load(config.getJSONObject("feedback model")))
+                .build();
     }
 
     private class TaskModel {

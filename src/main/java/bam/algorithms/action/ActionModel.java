@@ -81,6 +81,31 @@ public interface ActionModel {
      * @throws JSONException
      */
     default JSONObject serialize() throws JSONException {
-        return new JSONObject().put("name", name());
+        return new JSONObject()
+                .put("name", name())
+                .put("class", getClass().getSimpleName());
+    }
+
+    /**
+     * Loads an implementation of this interface
+     * from its JSON representation.
+     *
+     * @param config the JSON representation of the object
+     * @return an instance defined by the JSON representation
+     * @throws JSONException
+     */
+    static ActionModel load(JSONObject config) throws JSONException {
+        String className = config.getString("class");
+
+        if(className.equals(RandomActionModel.class.getSimpleName()))
+            return RandomActionModel.get();
+        else if(className.equals(GreedyActionModel.class.getSimpleName()))
+            return GreedyActionModel.load(config);
+        else if(className.equals(BoltzmannActionModel.class.getSimpleName()))
+            return BoltzmannActionModel.load(config);
+        else if(className.equals(NormalizedActionModel.class.getSimpleName()))
+            return NormalizedActionModel.load(config);
+
+        throw new RuntimeException("Unknown Implementation of 'ActionModel' requested");
     }
 }

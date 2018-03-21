@@ -24,6 +24,10 @@ public class AdaGrad implements Optimization {
         return new AdaGrad(learning_rate, offset);
     }
 
+    public static AdaGrad load(JSONObject config) throws JSONException {
+        return with(config.getDouble("learning rate"), config.getDouble("offset"));
+    }
+
     @Override
     public Optimization.Instance instance(int num_parameters) {
         final double[] second_moment = new double[num_parameters];
@@ -46,6 +50,7 @@ public class AdaGrad implements Optimization {
     public JSONObject serialize() throws JSONException {
         return new JSONObject()
                 .put("name", name())
+                .put("class", getClass().getSimpleName())
                 .put("learning rate", learning_rate)
                 .put("offset", offset);
     }

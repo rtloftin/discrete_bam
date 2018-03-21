@@ -69,6 +69,27 @@ public interface FeedbackModel {
      * @throws JSONException
      */
     default JSONObject serialize() throws JSONException {
-        return new JSONObject().put("name", name());
+        return new JSONObject()
+                .put("name", name())
+                .put("class", getClass().getSimpleName());
+    }
+
+    /**
+     * Loads an implementation of this interface
+     * from its JSON representation.
+     *
+     * @param config the JSON representation of the object
+     * @return an instance defined by the JSON representation
+     * @throws JSONException
+     */
+    static FeedbackModel load(JSONObject config) throws JSONException {
+        String className = config.getString("class");
+
+        if(className.equals(NoFeedback.class.getSimpleName()))
+            return NoFeedback.get();
+        else if(className.equals(ASABL.class.getSimpleName()))
+            return ASABL.load(config);
+
+        throw new RuntimeException("Unknown Implementation of 'FeedbackModel' requested");
     }
 }

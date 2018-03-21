@@ -23,6 +23,11 @@ public class Adam implements Optimization {
         return new Adam(learning_rate, mean_decay, variance_decay, offset);
     }
 
+    public static Adam load(JSONObject config) throws JSONException {
+        return with(config.getDouble("learning rate"), config.getDouble("mean decay"),
+                config.getDouble("variance decay"), config.getDouble("offset"));
+    }
+
     @Override
     public Optimization.Instance instance(int num_parameters) {
         final double[] first_moment = new double[num_parameters];
@@ -49,6 +54,7 @@ public class Adam implements Optimization {
     public JSONObject serialize() throws JSONException {
         return new JSONObject()
                 .put("name", name())
+                .put("class", getClass().getSimpleName())
                 .put("learning rate", learning_rate)
                 .put("mean decay", mean_decay)
                 .put("variance decay", variance_decay)

@@ -67,7 +67,7 @@ public class SERD implements Agent {
             return this;
         }
 
-        public Builder beta(int beta) {
+        public Builder beta(double beta) {
             this.beta = beta;
 
             return this;
@@ -138,6 +138,7 @@ public class SERD implements Agent {
                 public JSONObject serialize() throws JSONException {
                     return new JSONObject()
                             .put("name", name())
+                            .put("class", SERD.class.getSimpleName())
                             .put("num updates", num_updates)
                             .put("beta", beta)
                             .put("use transitions", use_transitions)
@@ -153,6 +154,19 @@ public class SERD implements Agent {
 
     public static Builder builder() {
         return new Builder();
+    }
+
+    public static Algorithm load(JSONObject config) throws JSONException {
+        return builder()
+                .numUpdates(config.getInt("num updates"))
+                .beta(config.getDouble("beta"))
+                .useTransitions(config.getBoolean("use transitions"))
+                .reinitialize(config.getBoolean("reinitialize"))
+                .dynamicsOptimization(Optimization.load(config.getJSONObject("dynamics optimization")))
+                .taskOptimization(Optimization.load(config.getJSONObject("task optimization")))
+                .actionModel(ActionModel.load(config.getJSONObject("action model")))
+                .feedbackModel(FeedbackModel.load(config.getJSONObject("feedback model")))
+                .build();
     }
 
     private class TaskModel {

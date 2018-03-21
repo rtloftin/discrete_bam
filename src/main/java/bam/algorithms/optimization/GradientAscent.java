@@ -20,6 +20,10 @@ public class GradientAscent implements Optimization {
         return new GradientAscent(learning_rate);
     }
 
+    public static GradientAscent load(JSONObject config) throws JSONException {
+        return with(config.getDouble("learning rate"));
+    }
+
     @Override
     public Optimization.Instance instance(int num_parameters) {
         return (double[] parameters, double[] gradient) -> {
@@ -37,6 +41,7 @@ public class GradientAscent implements Optimization {
     public JSONObject serialize() throws JSONException {
         return new JSONObject()
                 .put("name", name())
+                .put("class", getClass().getSimpleName())
                 .put("learning rate", learning_rate);
     }
 }

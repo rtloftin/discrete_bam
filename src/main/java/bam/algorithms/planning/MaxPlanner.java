@@ -1,5 +1,8 @@
 package bam.algorithms.planning;
 
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import java.util.Arrays;
 import java.util.function.Consumer;
 
@@ -20,6 +23,13 @@ public class MaxPlanner implements Planner {
             @Override
             public String name() {
                 return "Max Planner";
+            }
+
+            @Override
+            public JSONObject serialize() throws JSONException {
+                return new JSONObject()
+                        .put("name", name())
+                        .put("class", MaxPlanner.class.getSimpleName());
             }
         };
     }

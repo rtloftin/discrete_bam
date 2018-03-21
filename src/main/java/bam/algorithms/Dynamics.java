@@ -79,6 +79,17 @@ public interface Dynamics {
         return next[0];
     }
 
+    /**
+     * Simulates the provided policy under these
+     * dynamics, and returns the accumulated reward.
+     *
+     * @param policy the policy to simulate
+     * @param rewards the reward function
+     * @param start the initial state for the simulation
+     * @param steps the number of steps to simulate for
+     * @param random a random number source
+     * @return the total accumulated reward
+     */
     default double simulate(Policy policy,
                             Reward rewards,
                             int start,

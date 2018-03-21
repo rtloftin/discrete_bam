@@ -110,12 +110,16 @@ public class NormalizedActionModel implements ActionModel {
         return jacobian;
     }
 
+    public static NormalizedActionModel get() {
+        return new NormalizedActionModel(1.0);
+    }
+
     public static NormalizedActionModel beta(double beta) {
         return new NormalizedActionModel(beta);
     }
 
-    public static NormalizedActionModel get() {
-        return new NormalizedActionModel(1.0);
+    public static NormalizedActionModel load(JSONObject config) throws JSONException {
+        return beta(config.getDouble("beta"));
     }
 
     @Override
@@ -191,6 +195,7 @@ public class NormalizedActionModel implements ActionModel {
     public JSONObject serialize() throws JSONException {
         return new JSONObject()
                 .put("name", name())
+                .put("class", getClass().getSimpleName())
                 .put("beta", beta);
     }
 

@@ -80,6 +80,17 @@ public class GaussianDensity implements Variational {
         return new Builder();
     }
 
+    public static Variational load(JSONObject config) throws JSONException {
+        return builder()
+                .numSamples(config.getInt("num samples"))
+                .resamplingRate(config.getDouble("resampling rate"))
+                .fixedVariance(config.getBoolean("fixed variance"))
+                .priorMean(config.getDouble("prior mean"))
+                .priorDeviation(config.getDouble("prior deviation"))
+                .optimization(Optimization.load(config.getJSONObject("optimization")))
+                .build();
+    }
+
     private final Builder config;
 
     private GaussianDensity(Builder config) { this.config = config; }
@@ -207,6 +218,7 @@ public class GaussianDensity implements Variational {
     public JSONObject serialize() throws JSONException {
         return new JSONObject()
                 .put("name", name())
+                .put("class", getClass().getSimpleName())
                 .put("num samples", config.num_samples)
                 .put("resampling rate", config.resampling_rate)
                 .put("fixed variance", config.fixed_variance)

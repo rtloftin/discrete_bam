@@ -1,5 +1,8 @@
 package bam.domains;
 
+import org.json.JSONException;
+import org.json.JSONObject;
+
 /**
  * This class represents a 2D navigation grid,
  * either 4 or 8 connected.
@@ -9,8 +12,8 @@ package bam.domains;
 public class NavGrid {
 
     // Grid connection types
-    public static final int FOUR = 0;
-    public static final int EIGHT = 1;
+    public static final int FOUR = 4;
+    public static final int EIGHT = 8;
 
     // Action types
     public static final int STAY = 0;
@@ -26,6 +29,7 @@ public class NavGrid {
     // The width and height of the grid
     private int width;
     private int height;
+    private int connections;
 
     // The number of states and actions
     private int num_cells;
@@ -34,12 +38,13 @@ public class NavGrid {
     // The successors of each state
     private int[][] successors;
 
-    public NavGrid(int width, int height, int connect) {
+    public NavGrid(int width, int height, int connections) {
         this.width = width;
         this.height = height;
+        this.connections = connections;
 
         num_cells = width * height;
-        num_moves = (EIGHT == connect) ? 9 : 5;
+        num_moves = (EIGHT == connections) ? 9 : 5;
 
         successors = new int[num_cells][num_moves];
 
@@ -92,7 +97,7 @@ public class NavGrid {
             }
 
         // Eight connected actions
-        if(EIGHT == connect) {
+        if(EIGHT == connections) {
             for(int row = 0; row < height; ++row) // UP LEFT
                 for(int column = 0; column < width; ++column) {
                     int state = index(row, column);
@@ -210,5 +215,29 @@ public class NavGrid {
      */
     public int index(int row, int column) {
         return row + (column * height);
+    }
+
+    /**
+     * Returns a JSON representation of this navigation grid.
+     *
+     * @return a JSON representation of the grid
+     * @throws JSONException
+     */
+    public JSONObject serialize() throws JSONException {
+        return new JSONObject()
+                .put("width", width)
+                .put("height", height)
+                .put("connections", connections);
+    }
+
+    /**
+     * Loads a Nav Grid from its JSON representation.
+     *
+     * @param config the JSON representation of the grid
+     * @return the grid defined by the JSON representation
+     * @throws JSONException
+     */
+    public static NavGrid load(JSONObject config) throws JSONException {
+        return new NavGrid(config.getInt("width"), config.getInt("height"), config.getInt("connections"));
     }
 }

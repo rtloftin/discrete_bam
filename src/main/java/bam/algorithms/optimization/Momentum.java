@@ -24,6 +24,10 @@ public class Momentum implements Optimization {
         return new Momentum(learning_rate, momentum);
     }
 
+    public static Momentum load(JSONObject config) throws JSONException {
+        return with(config.getDouble("learning rate"), config.getDouble("momentum"));
+    }
+
     @Override
     public Optimization.Instance instance(int num_parameters) {
         final double[] delta = new double[num_parameters];
@@ -46,6 +50,7 @@ public class Momentum implements Optimization {
     public JSONObject serialize() throws JSONException {
         return new JSONObject()
                 .put("name", name())
+                .put("class", getClass().getSimpleName())
                 .put("learning rate", learning_rate)
                 .put("momentum", momentum);
     }

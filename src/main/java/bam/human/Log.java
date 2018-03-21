@@ -1,9 +1,10 @@
 package bam.human;
 
-import java.io.File;
-import java.io.IOException;
+import java.io.OutputStream;
 import java.io.PrintStream;
 import java.time.Instant;
+import java.util.LinkedList;
+import java.util.List;
 
 /**
  * A utility class which implements
@@ -19,22 +20,31 @@ import java.time.Instant;
  */
 public class Log {
 
-    private PrintStream[] streams;
+    private List<PrintStream> streams;
 
-    private Log(PrintStream... streams) { this.streams = streams; }
-
-    public static Log create(PrintStream... streams) { return new Log(streams); }
+    private Log(List<PrintStream> streams) { this.streams = streams; }
 
     public static Log dummy() {
-        return new Log();
+        return new Log(new LinkedList<>());
     }
 
-    public static Log console() { return new Log(new PrintStream(System.out)); }
+    public static Log create(OutputStream... streams) {
+        List<PrintStream> print_streams = new LinkedList<>();
 
-    public static Log file(File file) throws IOException { return new Log(new PrintStream(file)); }
+        for(OutputStream stream : streams)
+            print_streams.add(new PrintStream(stream));
 
-    public static Log combined(File file) throws IOException {
-        return new Log(new PrintStream(file), new PrintStream(System.out));
+        return new Log(print_streams);
+    }
+
+    public static Log console(OutputStream... streams) {
+        List<PrintStream> print_streams = new LinkedList<>();
+        print_streams.add(new PrintStream(System.out));
+
+        for(OutputStream stream : streams)
+            print_streams.add(new PrintStream(stream));
+
+        return new Log(print_streams);
     }
 
     public Log write(String message) {

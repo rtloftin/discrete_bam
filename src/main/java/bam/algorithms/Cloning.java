@@ -5,6 +5,7 @@ import bam.algorithms.action.BoltzmannActionModel;
 import bam.algorithms.action.GreedyActionModel;
 import bam.algorithms.feedback.FeedbackModel;
 import bam.algorithms.feedback.NoFeedback;
+import bam.algorithms.optimization.Optimization;
 import bam.algorithms.variational.Variational;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -105,6 +106,7 @@ public class Cloning implements Agent {
                 public JSONObject serialize() throws JSONException {
                     return new JSONObject()
                             .put("name", name())
+                            .put("class", Cloning.class.getSimpleName())
                             .put("num updates", num_updates)
                             .put("reinitialize", reinitialize)
                             .put("task source", task_source.serialize())
@@ -117,6 +119,16 @@ public class Cloning implements Agent {
 
     public static Builder builder() {
         return new Builder();
+    }
+
+    public static Algorithm load(JSONObject config) throws JSONException {
+        return builder()
+                .numUpdates(config.getInt("num updates"))
+                .reinitialize(config.getBoolean("reinitialize"))
+                .taskSource(Variational.load(config.getJSONObject("task source")))
+                .actionModel(ActionModel.load(config.getJSONObject("action model")))
+                .feedbackModel(FeedbackModel.load(config.getJSONObject("feedback model")))
+                .build();
     }
 
     private class TaskModel {

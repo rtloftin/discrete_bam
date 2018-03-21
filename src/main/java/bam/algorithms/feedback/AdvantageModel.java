@@ -56,6 +56,29 @@ public interface AdvantageModel {
      * @throws JSONException
      */
     default JSONObject serialize() throws JSONException {
-        return new JSONObject().put("name", name());
+        return new JSONObject()
+                .put("name", name())
+                .put("class", getClass().getSimpleName());
+    }
+
+    /**
+     * Loads an implementation of this interface
+     * from its JSON representation.
+     *
+     * @param config the JSON representation of the object
+     * @return an instance defined by the JSON representation
+     * @throws JSONException
+     */
+    static AdvantageModel load(JSONObject config) throws JSONException {
+        String className = config.getString("class");
+
+        if(className.equals(MaxAdvantage.class.getSimpleName()))
+            return MaxAdvantage.get();
+        else if(className.equals(MeanAdvantage.class.getSimpleName()))
+            return MeanAdvantage.get();
+        else if(className.equals(SoftmaxAdvantage.class.getSimpleName()))
+            return SoftmaxAdvantage.load(config);
+
+        throw new RuntimeException("Unknown Implementation of 'AdvantageModel' requested");
     }
 }

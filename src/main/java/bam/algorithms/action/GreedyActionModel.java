@@ -40,6 +40,10 @@ public class GreedyActionModel implements ActionModel {
         return new GreedyActionModel(epsilon);
     }
 
+    public static GreedyActionModel load(JSONObject config) throws JSONException {
+        return epsilon(config.getDouble("epsilon"));
+    }
+
     @Override
     public double[] policy(double[] values) {
         double max = -Double.MAX_VALUE;
@@ -99,6 +103,7 @@ public class GreedyActionModel implements ActionModel {
     public JSONObject serialize() throws JSONException {
         return new JSONObject()
                 .put("name", name())
+                .put("class", getClass().getSimpleName())
                 .put("epsilon", epsilon);
     }
 }

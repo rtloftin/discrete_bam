@@ -35,9 +35,14 @@ public class BoltzmannPlanner implements Planner {
             public JSONObject serialize() throws JSONException {
                 return new JSONObject()
                         .put("name", name())
+                        .put("class", BoltzmannPlanner.class.getSimpleName())
                         .put("beta", beta);
             }
         };
+    }
+
+    public static PlanningAlgorithm load(JSONObject config) throws JSONException {
+        return algorithm(config.getDouble("beta"));
     }
 
     // Planning model

@@ -35,6 +35,14 @@ public class GridWorld implements Environment {
             rewards[grid.index(row, column)] = 1.0;
         }
 
+        public int row() {
+            return row;
+        }
+
+        public int column() {
+            return column;
+        }
+
         @Override
         public int initial(Random random) {
             int row, col;
@@ -101,6 +109,40 @@ public class GridWorld implements Environment {
         tasks.add(new Task(name, row, column));
     }
 
+    /**
+     * Adds a new goal based on its JSON representation.
+     *
+     * @param config the JSON representation of the goal
+     * @throws JSONException
+     */
+    public void addGoal(JSONObject config) throws JSONException {
+
+    }
+
+    public int width() {
+        return grid.width();
+    }
+
+    public int height() {
+        return grid.height();
+    }
+
+    public int index(int row, int column) {
+        return grid.index(row, column);
+    }
+
+    public int row(int index) {
+        return grid.row(index);
+    }
+
+    public int column(int index) {
+        return grid.column(index);
+    }
+
+    public boolean occupied(int row, int column) {
+        return map[row][column];
+    }
+
     @Override
     public Dynamics dynamics() {
         return dynamics;
@@ -114,26 +156,6 @@ public class GridWorld implements Environment {
     @Override
     public Representation representation() {
         return representation;
-    }
-
-    @Override
-    public String name() {
-        return name;
-    }
-
-    @Override
-    public JSONObject serialize() throws JSONException {
-        JSONArray json_tasks  =new JSONArray();
-
-        for(Task task : tasks)
-            json_tasks.put(task.serialize());
-
-        return new JSONObject()
-                .put("name", name())
-                .put("width", grid.width())
-                .put("height", grid.height())
-                .put("actions", grid.numMoves())
-                .put("tasks", json_tasks);
     }
 
     @Override
@@ -159,62 +181,61 @@ public class GridWorld implements Environment {
         return Optional.of(image);
     }
 
-    //////////////////////////////////////////
-    // Serialization Methods for the Server //
-    //////////////////////////////////////////
-
-
     @Override
-    public int parseAction(JSONObject action) throws JSONException {
-        String type = action.getString("type");
-
-        if(type.equals("up"))
-            return NavGrid.UP;
-        if(type.equals("down"))
-            return NavGrid.DOWN;
-        if(type.equals("left"))
-            return NavGrid.LEFT;
-        if(type.equals("right"))
-            return NavGrid.RIGHT;
-
-        return NavGrid.STAY;
+    public String name() {
+        return name;
     }
 
     @Override
-    public int parseState(JSONObject state) throws JSONException {
-        int column = state.getInt("x");
-        int row = state.getInt("y");
+    public JSONObject serialize() throws JSONException {
 
-        return grid.index(row, column);
+        // Serialize map
+        JSONArray rows = new JSONArray();
+
+        for(int row = 0; row < grid.height(); ++row) {
+            JSONArray columns = new JSONArray();
+
+            for(int column = 0; column < grid.width(); ++column)
+                columns.put(map[row][column]);
+
+            rows.put(columns);
+        }
+
+        // Serialize tasks
+        JSONArray json_tasks = new JSONArray();
+
+        for(Task task : tasks)
+            json_tasks.put(task.serialize());
+
+        return new JSONObject()
+                .put("name", name())
+                .put("class", getClass().getSimpleName())
+                .put("grid", grid.serialize())
+                .put("map", rows)
+                .put("tasks", json_tasks);
     }
 
-    @Override
-    public JSONObject writeState(int state, int last_action) throws JSONException {
-        int x = grid.column(state);
-        int y = grid.row(state);
+    public static GridWorld load(JSONObject config) throws JSONException {
+        String name = config.getString("name");
+        NavGrid grid = NavGrid.load(config.getJSONObject("grid"));
 
-        double theta = 0.0;
+        boolean[][] map = new boolean[grid.height()][grid.width()];
+        JSONArray rows = config.getJSONArray("map");
 
-        if(NavGrid.DOWN == last_action)
-            theta = Math.PI;
-        else if(NavGrid.LEFT == last_action)
-            theta = 0.5 * Math.PI;
-        else if(NavGrid.RIGHT == last_action)
-            theta = -0.5 * Math.PI;
+        for(int row = 0; row < grid.height(); ++row) {
+            JSONArray columns = rows.getJSONArray(row);
 
-        JSONObject json = new JSONObject();
-        json.put("x", x);
-        json.put("y", y);
+            for(int column = 0; column < grid.width(); ++column)
+                map[row][column] = columns.getBoolean(column);
+        }
 
-        return json;
-    }
+        GridWorld environment = new GridWorld(name, grid, map);
 
-    @Override
-    public JSONObject writeLayout(String task) throws JSONException {
-        JSONObject json = new JSONObject();
+        JSONArray tasks = config.getJSONArray("tasks");
 
-        // This isn't going to work, need to rethink this
+        for(int task = 0; task < tasks.length(); ++task)
+            environment.addGoal(tasks.getJSONObject(task));
 
-        return null;
+        return environment;
     }
 }

@@ -57,6 +57,14 @@ public class PointDensity implements Variational {
         return new Builder();
     }
 
+    public static Variational load(JSONObject config) throws JSONException {
+        return builder()
+                .priorMean(config.getDouble("prior mean"))
+                .priorDeviation(config.getDouble("prior deviation"))
+                .optimization(Optimization.load(config.getJSONObject("optimization")))
+                .build();
+    }
+
     private final Builder config;
 
     private PointDensity(Builder config) { this.config = config; }
@@ -154,6 +162,7 @@ public class PointDensity implements Variational {
     public JSONObject serialize() throws JSONException {
         return new JSONObject()
                 .put("name", name())
+                .put("class", getClass().getSimpleName())
                 .put("prior mean", config.prior_mean)
                 .put("prior deviation", config.prior_deviation)
                 .put("optimization", config.optimization.serialize());

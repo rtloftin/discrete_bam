@@ -2,18 +2,14 @@ package bam.human;
 
 import io.undertow.Handlers;
 import io.undertow.Undertow;
-import io.undertow.websockets.core.AbstractReceiveListener;
-import io.undertow.websockets.core.BufferedTextMessage;
-import io.undertow.websockets.core.WebSocketChannel;
-import io.undertow.websockets.core.WebSockets;
+import io.undertow.websockets.core.*;
 import io.undertow.websockets.spi.WebSocketHttpExchange;
 
-import java.io.File;
 import java.io.IOException;
 
 public class ServerMain {
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws Exception {
         testServer();
     }
 
@@ -23,31 +19,20 @@ public class ServerMain {
     }
 
     // Test server code will go here
-    private static void testServer() {
-        UserGroup users = UserGroup.builder()
+    private static void testServer() throws IOException {
+        Users users = Users.builder()
                 .maxUsers(2)
-                .dataRoot(new File("C:\\Users\\Tyler\\Desktop\\server_test"))
+                // .dataRoot(Directory.local("C:\\Users\\Tyler\\Desktop\\server_test"))
+                .dataRoot(Directory.dummy("bam_server"))
+                .sessionFactory(new TestFactory())
                 .build();
 
         Undertow server = Undertow.builder()
                 .addHttpListener(8080, "localhost")
                 .setHandler(Handlers.path()
-                        .addPrefixPath("/",
-                                Handlers.websocket((WebSocketHttpExchange exchange, WebSocketChannel channel) -> {
-                                    try {
-                                        users.add(channel);
-
-                                        System.out.println("connection made");
-                                        WebSockets.sendText("ready", channel, null);
-                                    } catch(UserGroup.BusyException e) {
-                                        WebSockets.sendText("busy", channel, null);
-                                        System.out.println("I'm too busy");
-                                    } catch(Exception e) {
-                                        WebSockets.sendText("error", channel, null);
-                                        System.out.println("something went really wrong");
-                                    }
-
-                                    channel.resumeReceives();
+                        .addPrefixPath("/", Handlers
+                                .websocket((WebSocketHttpExchange exchange, WebSocketChannel channel) -> {
+                                    users.add(WebsocketConnection.with(channel));
                                 })))
                 .build();
         server.start();

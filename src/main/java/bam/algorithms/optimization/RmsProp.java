@@ -26,6 +26,11 @@ public class RmsProp implements Optimization {
         return new RmsProp(learning_rate, average_ratio, offset);
     }
 
+    public static RmsProp load(JSONObject config) throws JSONException {
+        return with(config.getDouble("learning rate"),
+                config.getDouble("average ratio"), config.getDouble("offset"));
+    }
+
     @Override
     public Optimization.Instance instance(int num_parameters) {
         final double[] second_moment = new double[num_parameters];
@@ -49,6 +54,7 @@ public class RmsProp implements Optimization {
     public JSONObject serialize() throws JSONException {
         return new JSONObject()
                 .put("name", name())
+                .put("class", getClass().getSimpleName())
                 .put("learning rate", learning_rate)
                 .put("average ratio", average_ratio)
                 .put("offset", offset);

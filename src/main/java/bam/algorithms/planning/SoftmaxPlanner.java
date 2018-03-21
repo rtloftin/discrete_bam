@@ -35,9 +35,14 @@ public class SoftmaxPlanner implements Planner {
             public JSONObject serialize() throws JSONException {
                 return new JSONObject()
                         .put("name", name())
+                        .put("class", SoftmaxPlanner.class.getSimpleName())
                         .put("beta", beta);
             }
         };
+    }
+
+    public static PlanningAlgorithm load(JSONObject config) throws JSONException {
+        return algorithm(config.getDouble("beta"));
     }
 
     // Planning model

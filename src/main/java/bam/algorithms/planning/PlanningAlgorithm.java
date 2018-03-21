@@ -50,7 +50,26 @@ public interface PlanningAlgorithm {
      * @return a json representation of this algorithm
      * @throws JSONException
      */
-    default JSONObject serialize() throws JSONException {
-        return new JSONObject().put("name", name());
+    JSONObject serialize() throws JSONException ;
+
+    /**
+     * Loads an implementation of this interface
+     * from its JSON representation.
+     *
+     * @param config the JSON representation of the object
+     * @return an instance defined by the JSON representation
+     * @throws JSONException
+     */
+    static PlanningAlgorithm load(JSONObject config) throws JSONException {
+        String className = config.getString("class");
+
+        if(className.equals(MaxPlanner.class.getSimpleName()))
+            return MaxPlanner.algorithm();
+        else if(className.equals(BoltzmannPlanner.class.getSimpleName()))
+            return BoltzmannPlanner.load(config);
+        else if(className.equals(SoftmaxPlanner.class.getSimpleName()))
+            return SoftmaxPlanner.load(config);
+
+        throw new RuntimeException("Unknown Implementation of 'PlanningAlgorithm' requested");
     }
 }

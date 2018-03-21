@@ -49,6 +49,10 @@ public class SoftmaxAdvantage implements AdvantageModel {
         return new SoftmaxAdvantage(beta);
     }
 
+    public static SoftmaxAdvantage load(JSONObject config) throws JSONException {
+        return beta(config.getDouble("beta"));
+    }
+
     @Override
     public double advantage(int action, double[] values) {
         double partition = 0.0;
@@ -88,6 +92,9 @@ public class SoftmaxAdvantage implements AdvantageModel {
 
     @Override
     public JSONObject serialize() throws JSONException {
-        return new JSONObject().put("name", name()).put("beta", beta);
+        return new JSONObject()
+                .put("name", name())
+                .put("class", getClass().getSimpleName())
+                .put("beta", beta);
     }
 }

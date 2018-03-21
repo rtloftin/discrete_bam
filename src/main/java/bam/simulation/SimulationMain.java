@@ -10,7 +10,7 @@ import bam.domains.NavGrid;
 import bam.domains.gravity_world.GravityWorld;
 import bam.algorithms.*;
 import bam.algorithms.optimization.Momentum;
-import bam.domains.grid_world.GridWorld;
+import bam.domains.grid_world.GridWorlds;
 import bam.algorithms.action.NormalizedActionModel;
 import bam.algorithms.variational.PointDensity;
 
@@ -64,10 +64,10 @@ public class SimulationMain {
         File folder = Util.stampedFolder("single_task", root);
 
         // Initialize test environments
-        Environment empty = GridWorld.empty(10, 10, NavGrid.FOUR);
-        Environment center_block = GridWorld.centerBlock(NavGrid.FOUR);
-        Environment center_wall = GridWorld.centerWall(NavGrid.FOUR);
-        Environment two_rooms = GridWorld.twoRooms(NavGrid.FOUR);
+        Environment empty = GridWorlds.empty(10, 10, NavGrid.FOUR);
+        Environment center_block = GridWorlds.centerBlock(NavGrid.FOUR);
+        Environment center_wall = GridWorlds.centerWall(NavGrid.FOUR);
+        Environment two_rooms = GridWorlds.twoRooms(NavGrid.FOUR);
 
         // Action Model
         ActionModel action_model = NormalizedActionModel.beta(1.0);
@@ -137,11 +137,11 @@ public class SimulationMain {
         File folder = Util.stampedFolder("multi_task", root);
 
         // Initialize test environments
-        Environment empty = GridWorld.empty(10, 10, NavGrid.FOUR);
-        Environment center_block = GridWorld.centerBlock(NavGrid.FOUR);
-        Environment center_wall = GridWorld.centerWall(NavGrid.FOUR);
-        Environment two_rooms = GridWorld.twoRooms(NavGrid.FOUR);
-        Environment three_rooms = GridWorld.threeRooms(NavGrid.FOUR);
+        Environment empty = GridWorlds.empty(10, 10, NavGrid.FOUR);
+        Environment center_block = GridWorlds.centerBlock(NavGrid.FOUR);
+        Environment center_wall = GridWorlds.centerWall(NavGrid.FOUR);
+        Environment two_rooms = GridWorlds.twoRooms(NavGrid.FOUR);
+        Environment three_rooms = GridWorlds.threeRooms(NavGrid.FOUR);
 
         Environment flip = GravityWorld.flip();
         Environment medium_flip = GravityWorld.medium_flip();

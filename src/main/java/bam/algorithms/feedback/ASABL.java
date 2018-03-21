@@ -66,6 +66,16 @@ public class ASABL implements FeedbackModel {
         return new Builder();
     }
 
+    public static ASABL load(JSONObject config) throws JSONException {
+        return builder()
+                .advantage(AdvantageModel.load(config.getJSONObject("advantage")))
+                .epsilon(config.getDouble("epsilon"))
+                .alpha(config.getDouble("alpha"))
+                .muPlus(config.getDouble("mu plus"))
+                .muMinus(config.getDouble("mu minus"))
+                .build();
+    }
+
     private AdvantageModel advantage_model; // The model of how the teacher computes the advantage
 
     private final double epsilon; // TeacherFeedback error rate
@@ -153,6 +163,7 @@ public class ASABL implements FeedbackModel {
     public JSONObject serialize() throws JSONException {
         return new JSONObject()
                 .put("name", name())
+                .put("class", getClass().getSimpleName())
                 .put("advantage", advantage_model.serialize())
                 .put("epsilon", epsilon)
                 .put("alpha", alpha)

@@ -2,6 +2,7 @@ package bam.domains;
 
 import bam.algorithms.Dynamics;
 import bam.algorithms.Representation;
+import bam.domains.grid_world.GridWorld;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -53,6 +54,17 @@ public interface Environment {
     Representation representation();
 
     /**
+     * May render an image of the environment.
+     *
+     * Potential issue, requires that the image be rendered to know if it is possible to render
+     *
+     * @return an optional result containing the rendered image of this environment
+     */
+    default Optional<? extends BufferedImage> render() {
+        return Optional.empty();
+    }
+
+    /**
      * Gets the name of the environment.
      *
      * @return the name of the environment
@@ -67,20 +79,25 @@ public interface Environment {
      * @throws JSONException if something goes wrong during serialization
      */
     default JSONObject serialize() throws JSONException {
-        JSONObject json = new JSONObject();
-        json.put("name", name());
-
-        return json;
+        return new JSONObject()
+                .put("name", name())
+                .put("class", getClass().getSimpleName());
     }
 
     /**
-     * May render an image of the environment.
+     * Loads an implementation of this interface
+     * from its JSON representation.
      *
-     * Potential issue, requires that the image be rendered to know if it is possible to render
-     *
-     * @return an optional result containing the rendered image of this environment
+     * @param config the JSON representation of the object
+     * @return an instance defined by the JSON representation
+     * @throws JSONException
      */
-    default Optional<? extends BufferedImage> render() {
-        return Optional.empty();
+    static Environment load(JSONObject config) throws JSONException {
+        String className = config.getString("class");
+
+        if(className.equals(GridWorld.class.getSimpleName()))
+            return GridWorld.load(config);
+
+        throw new RuntimeException("Unknown Implementation of 'Environment' requested");
     }
 }

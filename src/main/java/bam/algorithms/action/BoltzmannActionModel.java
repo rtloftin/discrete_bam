@@ -34,6 +34,10 @@ public class BoltzmannActionModel implements ActionModel {
         return new BoltzmannActionModel(beta);
     }
 
+    public static BoltzmannActionModel load(JSONObject config) throws JSONException {
+        return beta(config.getDouble("beta"));
+    }
+
     @Override
     public double[] policy(double[] values) {
         double[] p = new double[values.length];
@@ -105,6 +109,7 @@ public class BoltzmannActionModel implements ActionModel {
     public JSONObject serialize() throws JSONException {
         return new JSONObject()
                 .put("name", name())
+                .put("class", getClass().getSimpleName())
                 .put("beta", beta);
     }
 }
