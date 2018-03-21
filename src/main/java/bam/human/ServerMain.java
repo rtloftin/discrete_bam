@@ -24,7 +24,7 @@ public class ServerMain {
                 .maxUsers(2)
                 // .dataRoot(Directory.local("C:\\Users\\Tyler\\Desktop\\server_test"))
                 .dataRoot(Directory.dummy("bam_server"))
-                .sessionFactory(new TestFactory())
+                .sessions(ConfigurationFactory.test())
                 .build();
 
         Undertow server = Undertow.builder()
@@ -32,7 +32,7 @@ public class ServerMain {
                 .setHandler(Handlers.path()
                         .addPrefixPath("/", Handlers
                                 .websocket((WebSocketHttpExchange exchange, WebSocketChannel channel) -> {
-                                    users.add(WebsocketConnection.with(channel));
+                                    users.add(WebsocketConnection.with(channel, 5000000L));
                                 })))
                 .build();
         server.start();

@@ -2,6 +2,7 @@ package bam.human;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.io.PrintStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -28,6 +29,12 @@ public class Directory {
 
     public static Directory local(String path) throws IOException {
         return new Directory(Files.createDirectories(Paths.get(path)));
+    }
+
+    public void save(String name, String content) throws IOException {
+        PrintStream stream = new PrintStream(stream(name));
+        stream.print(content);
+        stream.close();
     }
 
     public OutputStream stream(String name) throws IOException {

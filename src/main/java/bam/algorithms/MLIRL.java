@@ -337,7 +337,7 @@ public class MLIRL implements Agent {
     public void observe(StateTransition transition) { transitions.add(transition); }
 
     @Override
-    public void integrate() {
+    public Behavior integrate() {
 
         if(config.reinitialize)
             for(TaskModel task : tasks.values())
@@ -349,6 +349,14 @@ public class MLIRL implements Agent {
 
         for (TaskModel task : tasks.values())
             task.updatePolicy();
+
+        // Return behavior
+        Behavior behavior = Behavior.get();
+
+        for(TaskModel task : tasks.values())
+            behavior.put(task.name, task.policy);
+
+        return behavior;
     }
 
     @Override

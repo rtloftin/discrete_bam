@@ -50,20 +50,29 @@ public interface Remote {
         JSONObject serialize() throws JSONException;
     }
 
-    static Factory factory(Environment environment) {
-        // if(environment.getClass().equals(GridWorld.class))
-           // RemoteGridWorld.factory((GridWorld) environment);
+    /**
+     * Gets a remote simulation factory which constructs remote
+     * instances based on an environment defined by a JSON object.
+     *
+     * @param config a JSON representation of the environment
+     * @return a factory object that builds remote simulations using the environment
+     * @throws JSONException
+     */
+    static Factory load(JSONObject config) throws JSONException {
+        String className = config.getString("class");
+
+        if(className.equals(GridWorld.class.getSimpleName()))
+           return RemoteGridWorld.load(config);
 
         throw new RuntimeException("No Remote container available for this environment");
     }
 
     /**
      * Updates the agent's knowledge state to incorporate
-     * all the data currently available.
-     *
-     * MAY NEED TO RETURN A JSON REPRESENTATION OF THE INTERNAL STATE OF THE AGENT
+     * all the data currently available, and returns a JSON
+     * representation of the agent's current knowledge state.
      */
-    void integrate();
+    JSONObject integrate() throws JSONException;
 
     /**
      * Sets the current task of the environment, and

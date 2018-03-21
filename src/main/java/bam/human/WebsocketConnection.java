@@ -32,16 +32,25 @@ public class WebsocketConnection extends AbstractReceiveListener implements Conn
         public void capture() { is_captured = true; }
 
         @Override
-        public void respond(JSONObject response) throws JSONException {
+        public void respond(JSONObject response) {
             if(!has_responded) {
-                JSONObject message = new JSONObject()
-                        .put("response", id)
-                        .put("data", response);
+                try {
+                    JSONObject message = new JSONObject()
+                            .put("response", id)
+                            .put("data", response);
 
-                WebSockets.sendText(message.toString(2), channel, null);
+                    WebSockets.sendText(message.toString(2), channel, null);
 
-                has_responded = true;
+                    has_responded = true;
+                } catch(JSONException e) {
+                    error("connection error");
+                }
             }
+        }
+
+        @Override
+        public void error(String error) {
+            close(error);
         }
     }
 
@@ -63,23 +72,39 @@ public class WebsocketConnection extends AbstractReceiveListener implements Conn
     private Map<Integer, Consumer<JSONObject>> callbacks = new HashMap<>();
 
     // The connection close callback
-    private Runnable on_close = null;
+    private Consumer<String> on_close = null;
+
+    // Session timeout
+    private long timeout;
+    private Timer timer = null;
 
     // The actual websocket
     private WebSocketChannel channel;
 
-    private WebsocketConnection(WebSocketChannel channel) { this.channel = channel; }
+    private WebsocketConnection(WebSocketChannel channel, long timeout) {
+        this.channel = channel;
+        this.timeout = timeout;
+    }
 
-    public static WebsocketConnection with(WebSocketChannel channel) {
-        return new WebsocketConnection(channel);
+    public static WebsocketConnection with(WebSocketChannel channel, long timeout) {
+        return new WebsocketConnection(channel, timeout);
     }
 
     @Override
-    public void open(Runnable on_close) {
+    public void open(Consumer<String> on_close) {
         if(PENDING == status) {
 
             // Set close callback
             this.on_close = on_close;
+
+            // Set timeout
+            timer = new Timer();
+            timer.schedule(new TimerTask() {
+                @Override
+                public void run() {
+                    close("timeout");
+                }
+            }, timeout);
 
             // Open channel
             channel.getReceiveSetter().set(this);
@@ -118,11 +143,24 @@ public class WebsocketConnection extends AbstractReceiveListener implements Conn
     }
 
     @Override
-    public void close() {
+    public void close(String reason) {
         if(CLOSED != status){
+
+            // Update status
+            status = CLOSED;
+
+            // Fire callback
+            if(null != on_close)
+                on_close.accept("reason");
+
+            // Cancel timeout
+            if(null != timer)
+                timer.cancel();
+
+            // Try to close the connection - may already be closed
             try {
                 channel.close();
-            } catch(IOException e) { /* Nothing to be done */ }
+            } catch(IOException e) { /* Tried to close, nothing to be done */}
         }
     }
 
@@ -187,14 +225,13 @@ public class WebsocketConnection extends AbstractReceiveListener implements Conn
                         if(!msg.is_captured)
                             handler.accept(msg);
             }
-        } catch(JSONException e) { System.out.println("bad message"); }
+        } catch(JSONException e) {
+            close("connection error");
+        }
     }
 
     @Override
     protected void onClose(WebSocketChannel webSocketChannel, StreamSourceFrameChannel channel) {
-        if(null != on_close)
-            on_close.run();
-
-        status = CLOSED;
+        close("connection error");
     }
 }

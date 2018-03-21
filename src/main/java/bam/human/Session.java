@@ -9,6 +9,25 @@ import java.io.PrintStream;
 
 public class Session {
 
+    /**
+     * An interface for objects that construct sessions based
+     * on a configuration message provided by the client.
+     */
+    public interface Factory {
+
+        /**
+         * Constructs a new session object based on an
+         * initialization message provided by the client.
+         *
+         * @param connection the connection to the client
+         * @param directory the directory where session data will be saved
+         * @param config the configuration and initial state session
+         * @return the new session object
+         * @throws JSONException if the initial message is not properly formatted
+         */
+        Session build(Connection connection, Directory directory, JSONObject config) throws Exception;
+    }
+
     // The remote simulation associated with this session
     private Remote remote;
 
@@ -24,18 +43,14 @@ public class Session {
     // A log file for this session that is flushed at every update, used for debugging mostly
     private Log debug;
 
-    private void record(String type, JSONObject data, JSONObject response) throws JSONException {
+    private JSONObject record(String type) throws JSONException {
         JSONObject event = new JSONObject()
                 .put("timestamp", System.nanoTime())
                 .put("type", type);
 
-        if(null != data)
-            event.put("data", data);
-
-        if(null != response)
-            event.put("response", response);
-
         events.put(event);
+
+        return event;
     }
 
     private Session(Remote remote, Connection connection, Directory directory) throws IOException {
@@ -69,7 +84,9 @@ public class Session {
                         .put("state", remote.getState())
                         .put("layout", remote.getLayout());
 
-                record("take-action", message.data(), response);
+                record("take-action")
+                        .put("data", message.data())
+                        .put("response", response);
 
                 message.capture();
                 message.respond(response);
@@ -83,7 +100,8 @@ public class Session {
                         .put("state", remote.getState())
                         .put("layout", remote.getLayout());
 
-                record("get-action", null, response);
+                record("get-action")
+                        .put("response", response);
 
                 message.capture();
                 message.respond(response);
@@ -97,7 +115,9 @@ public class Session {
                         .put("state", remote.getState())
                         .put("layout", remote.getLayout());
 
-                record("task", message.data(), response);
+                record("task")
+                        .put("data", message.data())
+                        .put("response", response);
 
                 message.capture();
                 message.respond(response);
@@ -106,9 +126,8 @@ public class Session {
             try {
                 debug.write("update");
 
-                remote.integrate();
-
-                record("integrate", null, null); // Probably a better way to do implement this
+                record("integrate")
+                        .put("behavior", remote.integrate());
 
                 message.capture();
                 message.respond(new JSONObject());
@@ -122,7 +141,8 @@ public class Session {
                         .put("state", remote.getState())
                         .put("layout", remote.getLayout());
 
-                record("reset", null, response);
+                record("reset")
+                        .put("response", response);
 
                 message.capture();
                 message.respond(response);
@@ -137,22 +157,42 @@ public class Session {
                 .put("tasks", remote.getTasks())
                 .put("depth", remote.getDepth());
 
-        record("start", null, response);
+        record("start")
+                .put("response", response);
 
         return response;
     }
 
-    public void end() throws IOException, JSONException {
+    /**
+     * Terminates the session and saves all the session
+     * data.  Allows for a reason for terminating this
+     * session to be recorded, that is, whether there was
+     * an error, or whether the user actually ended the
+     * session on purpose.
+     *
+     * @param reason the session was ended
+     */
+    public void end(String reason) {
 
         // Detach all event listeners
         listener.remove();
 
-        // Do final data integration
+        try {
+            // Do final data integration
+            record("integrate")
+                    .put("behavior", remote.integrate());
 
-        // Save event log
-        PrintStream data = new PrintStream(directory.stream("events"));
-        data.print(events.toString(4));
-        data.close();
+            // Record end event
+            record("end")
+                    .put("reason", reason);
+
+            // Save event log
+            PrintStream data = new PrintStream(directory.stream("events"));
+            data.print(events.toString(4));
+            data.close();
+        } catch(Exception e) {
+            debug.write("ERROR: couldn't save session data");
+        }
 
         // Close log
         debug.write("Session Ended");

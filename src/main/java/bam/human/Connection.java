@@ -44,7 +44,14 @@ public interface Connection {
          * @param response the data for the message response
          * @throws JSONException if the response data is not properly formatted
          */
-        void respond(JSONObject response) throws JSONException;
+        void respond(JSONObject response);
+
+        /**
+         * Indicates that there was an error handing this message.
+         *
+         * @param error the specific error message
+         */
+        void error(String error);
     }
 
     /**
@@ -76,9 +83,13 @@ public interface Connection {
      * side should fail.  Does nothing if the connection
      * is already open or has been closed, refused or declined.
      *
-     * @param on_close a callback
+     * Accepts a callback which is called when the connection is closed
+     * for any reason.  The callback accepts a message indicating why
+     * the connection was closed.
+     *
+     * @param on_close the callback for when the connection is closed
      */
-    void open(Runnable on_close);
+    void open(Consumer<String> on_close);
 
     /**
      * Indicates that the server encountered an unrecoverable
@@ -100,7 +111,7 @@ public interface Connection {
      * nothing if the connection is already closed, or has
      * not been opened.
      */
-    void close();
+    void close(String reason);
 
     /**
      * Creates a new listener object attached to this

@@ -46,15 +46,6 @@ public class RemoteGridWorld implements Remote {
 
     }
 
-    public static RemoteGridWorld with(GridWorld environment, Agent agent, JSONObject initial) throws JSONException {
-        return new RemoteGridWorld(environment, agent, initial);
-    }
-
-    /*public static Remote.Factory factory(GridWorld environment) {
-        return (Algorithm algorithm, JSONObject initial) -> with(environment,
-                algorithm.agent(environment.representation()), initial);
-    }*/
-
     private void setTask(String name) {
 
         // Tell the agent
@@ -68,11 +59,29 @@ public class RemoteGridWorld implements Remote {
             }
     }
 
+    public static RemoteGridWorld with(GridWorld environment, Agent agent, JSONObject initial) throws JSONException {
+        return new RemoteGridWorld(environment, agent, initial);
+    }
+
+    public static Remote.Factory load(JSONObject config) throws JSONException {
+        GridWorld environment = GridWorld.load(config);
+
+        return new Factory() {
+            @Override
+            public Remote build(Algorithm algorithm, JSONObject initial) throws JSONException {
+                return with(environment, algorithm.agent(environment.representation()), initial);
+            }
+
+            @Override
+            public JSONObject serialize() throws JSONException {
+                return environment.serialize();
+            }
+        };
+    }
+
     @Override
-    public void integrate() {
-        try {
-            agent.integrate();
-        } catch(JSONException e) { /* Do nothing*/ }
+    public JSONObject integrate() throws JSONException {
+        return agent.integrate().serialize();
     }
 
     @Override

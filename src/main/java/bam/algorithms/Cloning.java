@@ -317,7 +317,7 @@ public class Cloning implements Agent {
     public void observe(StateTransition transition) { /* Does nothing, transition are ignored */}
 
     @Override
-    public void integrate() {
+    public Behavior integrate() {
 
         if(config.reinitialize)
             for(TaskModel task : tasks.values())
@@ -329,5 +329,13 @@ public class Cloning implements Agent {
 
         for (TaskModel task : tasks.values())
             task.updatePolicy();
+
+        // Return behavior
+        Behavior behavior = Behavior.get();
+
+        for(TaskModel task : tasks.values())
+            behavior.put(task.name, task.policy);
+
+        return behavior;
     }
 }

@@ -61,7 +61,7 @@ public interface Agent extends Policy {
      * amount of work, and should incorporate all of the
      * data the agent has received.
      */
-    void integrate() throws JSONException;
+    Behavior integrate();
 
     /**
      * WE NEED TO MAKE THE VISUALIZATION INTERFACE A LITTLE MORE CONSISTENT
