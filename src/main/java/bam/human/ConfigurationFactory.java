@@ -12,10 +12,13 @@ import bam.algorithms.variational.PointDensity;
 
 import bam.domains.Environment;
 import bam.domains.Experts;
+import bam.domains.farm_world.FarmWorld;
+import bam.domains.farm_world.FarmWorlds;
 import bam.domains.gravity_world.GravityWorld;
 import bam.domains.gravity_world.GravityWorlds;
 import bam.domains.grid_world.GridWorld;
 import bam.domains.grid_world.GridWorlds;
+import bam.human.domains.RemoteFarmWorld;
 import bam.human.domains.RemoteGravityWorld;
 import bam.human.domains.RemoteGridWorld;
 import org.json.JSONException;
@@ -157,7 +160,14 @@ public class ConfigurationFactory implements Session.Factory {
         Layout wall_layout = new Layout("wall", RemoteGravityWorld.with(wall), bam, wall_expert);
         Domain gravity_world = new Domain("gravity world", wall_layout);
 
-        return new ConfigurationFactory(grid_world, gravity_world);
+        // Gravity world tutorial domain and expert agent
+        FarmWorld example = FarmWorlds.example();
+        Algorithm example_expert = Experts.algorithm(example);
+
+        Layout example_layout = new Layout("example", RemoteFarmWorld.with(example), bam, example_expert);
+        Domain farm_world = new Domain("farm world", example_layout);
+
+        return new ConfigurationFactory(grid_world, gravity_world, farm_world);
     }
 
     public static ConfigurationFactory experiment() {

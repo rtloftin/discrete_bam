@@ -56,7 +56,7 @@ public class GravityWorld implements Environment {
 
             int row = random.nextInt(grid.height());
             int col = random.nextInt(grid.width());
-            int gravity = random.nextInt(4);
+            int gravity = random.nextInt(Gravity.values().length);
 
             return (gravity * grid.numCells()) + grid.index(row, col);
         }
@@ -129,12 +129,12 @@ public class GravityWorld implements Environment {
         return (gravity.ordinal() * grid.numCells()) + grid.index(row, column);
     }
 
-    public int row(int index) {
-        return grid.row(index);
+    public int row(int state) {
+        return grid.row(state % grid.numCells());
     }
 
-    public int column(int index) {
-        return grid.column(index);
+    public int column(int state) {
+        return grid.column(state % grid.numCells());
     }
 
     public Gravity gravity(int state) { return Gravity.values()[state / grid.numCells()]; }

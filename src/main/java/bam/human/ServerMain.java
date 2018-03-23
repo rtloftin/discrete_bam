@@ -12,12 +12,12 @@ import java.io.IOException;
 public class ServerMain {
 
     public static void main(String[] args) throws Exception {
-
-        // testServer();
+        // experimentServer();
+        testServer();
     }
 
     // The real server code will go here
-    private static void runServer() {
+    private static void experimentServer() {
 
     }
 

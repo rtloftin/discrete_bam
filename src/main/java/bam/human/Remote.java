@@ -2,8 +2,10 @@ package bam.human;
 
 import bam.algorithms.Algorithm;
 import bam.domains.Environment;
+import bam.domains.farm_world.FarmWorld;
 import bam.domains.gravity_world.GravityWorld;
 import bam.domains.grid_world.GridWorld;
+import bam.human.domains.RemoteFarmWorld;
 import bam.human.domains.RemoteGravityWorld;
 import bam.human.domains.RemoteGridWorld;
 import org.json.JSONArray;
@@ -67,6 +69,8 @@ public interface Remote {
            return RemoteGridWorld.load(config);
         else if(className.equals(GravityWorld.class.getSimpleName()))
             return RemoteGravityWorld.load(config);
+        else if(className.equals(FarmWorld.class.getSimpleName()))
+            return RemoteFarmWorld.load(config);
 
         throw new RuntimeException("No Remote container available for this environment");
     }

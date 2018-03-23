@@ -209,6 +209,7 @@ public class RemoteGravityWorld implements Remote {
 
     @Override
     public JSONObject getLayout() throws JSONException {
+
         // Write task
         JSONObject task = new JSONObject();
         task.put("x", current_task.column());
