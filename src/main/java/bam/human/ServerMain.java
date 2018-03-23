@@ -4,13 +4,16 @@ import io.undertow.Handlers;
 import io.undertow.Undertow;
 import io.undertow.websockets.core.*;
 import io.undertow.websockets.spi.WebSocketHttpExchange;
+import org.json.JSONArray;
+import org.json.JSONObject;
 
 import java.io.IOException;
 
 public class ServerMain {
 
     public static void main(String[] args) throws Exception {
-        testServer();
+
+        // testServer();
     }
 
     // The real server code will go here

@@ -30,9 +30,13 @@ public class Expert implements Policy {
         return new Expert(dynamics, rewards);
     }
 
+    public double[][] values() { return Q; }
+
     public double[] values(int state) {
         return Q[state];
     }
+
+    public double[][] policy() { return PI; }
 
     @Override
     public double[] policy(int state) { return PI[state]; }

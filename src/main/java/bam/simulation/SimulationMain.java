@@ -7,7 +7,7 @@ import bam.algorithms.planning.MaxPlanner;
 import bam.algorithms.variational.Variational;
 import bam.domains.Environment;
 import bam.domains.NavGrid;
-import bam.domains.gravity_world.GravityWorld;
+import bam.domains.gravity_world.GravityWorlds;
 import bam.algorithms.*;
 import bam.algorithms.optimization.Momentum;
 import bam.domains.grid_world.GridWorlds;
@@ -143,12 +143,12 @@ public class SimulationMain {
         Environment two_rooms = GridWorlds.twoRooms(NavGrid.FOUR);
         Environment three_rooms = GridWorlds.threeRooms(NavGrid.FOUR);
 
-        Environment flip = GravityWorld.flip();
-        Environment medium_flip = GravityWorld.medium_flip();
-        Environment large_flip = GravityWorld.large_flip();
+        Environment flip = GravityWorlds.flip();
+        Environment medium_flip = GravityWorlds.medium_flip();
+        Environment large_flip = GravityWorlds.large_flip();
 
-        Environment wall = GravityWorld.wall();
-        Environment choices = GravityWorld.choices();
+        Environment wall = GravityWorlds.wall();
+        Environment choices = GravityWorlds.choices();
 
         // Action Model
         ActionModel action_model = NormalizedActionModel.beta(1.0);
@@ -179,6 +179,7 @@ public class SimulationMain {
                 .dynamicsOptimization(Momentum.with(0.01, 0.5))
                 // .dynamicsOptimization(AdaGrad.with(1.0, 0.7))
                 .planningAlgorithm(BoltzmannPlanner.algorithm(1.0))
+                .actionModel(action_model)
                 .taskUpdates(200)
                 .dynamicsUpdates(200)
                 .build();

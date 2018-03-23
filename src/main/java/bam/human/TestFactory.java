@@ -30,7 +30,7 @@ public class TestFactory implements OldSession.Factory {
         //GridWorld environment = GridWorlds.centerBlock(NavGrid.FOUR);
         GridWorld environment = GridWorlds.threeRooms(NavGrid.FOUR);
 
-        // Agent agent = DummyAgent.with(environment.representation());
+        // Agent agent = Dummy.with(environment.representation());
         Agent agent = BAM.builder()
                 .taskSource(PointDensity.builder()
                         .optimization(Momentum.with(0.01, 0.5)).build())

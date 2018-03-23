@@ -19,7 +19,7 @@ public class GravityModel implements DynamicsModel {
     private final NavGrid grid;
 
     // Cell colors
-    private final int[][] colors;
+    private final Colors[][] colors;
 
     // Number of states and actions, and planning depth
     private final int num_states;
@@ -27,25 +27,25 @@ public class GravityModel implements DynamicsModel {
     private final int depth;
 
     // Parameters and gradient
-    private final double[] parameters = new double[4 * GravityWorld.CLEAR]; // Maybe three, reduce redundancy
-    private final double[] gradient = new double[4 * GravityWorld.CLEAR];
+    private final double[] parameters = new double[Gravity.values().length * Colors.values().length];
+    private final double[] gradient = new double[Gravity.values().length * Colors.values().length];
 
     // Output buffers - to avoid so many heap allocations
     private final double[] determined = new double[] { 1.0 };
-    private final double[] probable = new double[GravityWorld.CLEAR];
+    private final double[] probable = new double[Gravity.values().length];
 
     private final int[] single = new int[1];
-    private final int[] multiple = new int[GravityWorld.CLEAR];
+    private final int[] multiple = new int[Gravity.values().length];
 
     // Parameter optimizer
     private Optimization.Instance optimizer = null;
 
-    GravityModel(NavGrid grid, int[][] colors, int depth) {
+    GravityModel(NavGrid grid, Colors[][] colors, int depth) {
         this.grid = grid;
         this.colors = colors;
         this.depth = depth;
 
-        num_states = 4 * grid.numCells();
+        num_states = Gravity.values().length * grid.numCells();
         num_actions = 5;
     }
 
@@ -60,26 +60,26 @@ public class GravityModel implements DynamicsModel {
     @Override
     public void train(int start, int action, int end, double weight) {
 
-        if(!Double.isFinite(weight))
-            throw new RuntimeException("Gravity Model: training weight was invalid");
+        // if(!Double.isFinite(weight))
+           // throw new RuntimeException("Gravity Model: training weight was invalid");
 
         int cell = start % grid.numCells();
         int row = grid.row(cell);
         int column = grid.column(cell);
 
-        if(GravityWorld.CLEAR != colors[row][column]) { // If the cell is clear then there is nothing to learn
+        if(Colors.CLEAR != colors[row][column]) { // If the cell is clear then there is nothing to learn
             int gravity = end / grid.numCells();
-            int offset = 4 * colors[row][column];
+            int offset = Gravity.values().length * colors[row][column].ordinal();
 
             double partition = 0.0;
 
-            for(int grav = 0; grav < 4; ++grav)
+            for(int grav = 0; grav < Gravity.values().length; ++grav)
                 partition += Math.exp(parameters[offset + grav] - parameters[offset]);
 
-            if(!Double.isFinite(partition))
-                throw new RuntimeException("Gravity Model Training: encountered NaN, " + Arrays.toString(parameters));
+            // if(!Double.isFinite(partition))
+               // throw new RuntimeException("Gravity Model Training: encountered NaN");
 
-            for(int grav = 0; grav < 4; ++grav) {
+            for(int grav = 0; grav < Gravity.values().length; ++grav) {
                 double probability = Math.exp(parameters[offset + grav] - parameters[offset]) / partition;
 
                 if(grav != gravity)
@@ -142,8 +142,8 @@ public class GravityModel implements DynamicsModel {
         int row = grid.row(cell);
         int column = grid.column(cell);
 
-        if(GravityWorld.CLEAR == colors[row][column]) {
-            if(action == GravityWorld.BLOCKED[state / grid.numCells()]) // Action fails
+        if(Colors.CLEAR == colors[row][column]) {
+            if(action == Gravity.values()[state / grid.numCells()].blocks) // Action fails
                 single[0] = state;
             else
                 single[0] = state - cell + grid.next(cell, action);
@@ -151,11 +151,11 @@ public class GravityModel implements DynamicsModel {
             return single;
         }
 
-        for(int gravity = 0; gravity < 4; ++gravity) {
-            if(action == GravityWorld.BLOCKED[gravity]) // Action fails
-                multiple[gravity] = (gravity * grid.numCells()) + cell;
+        for(Gravity gravity : Gravity.values()) {
+            if(action == gravity.blocks) // Action fails
+                multiple[gravity.ordinal()] = (gravity.ordinal() * grid.numCells()) + cell;
             else
-                multiple[gravity] = (gravity * grid.numCells()) + grid.next(cell, action);
+                multiple[gravity.ordinal()] = (gravity.ordinal() * grid.numCells()) + grid.next(cell, action);
         }
 
         return multiple;
@@ -167,22 +167,22 @@ public class GravityModel implements DynamicsModel {
         int row = grid.row(cell);
         int column = grid.column(cell);
 
-        if(GravityWorld.CLEAR == colors[row][column])
+        if(Colors.CLEAR == colors[row][column])
             return determined;
 
-        int offset = colors[row][column];
+        int offset = Gravity.values().length * colors[row][column].ordinal();
         double partition = 0.0;
 
-        for(int gravity = 0; gravity < 4; ++gravity) {
-            probable[gravity] = Math.exp(parameters[offset + gravity] - parameters[offset]);
-            partition += probable[gravity];
+        for(Gravity gravity : Gravity.values()) {
+            probable[gravity.ordinal()] = Math.exp(parameters[offset + gravity.ordinal()] - parameters[offset]);
+            partition += probable[gravity.ordinal()];
         }
 
-        if(!Double.isFinite(partition))
-            throw new RuntimeException("Gravity Model Transition: encountered NaN");
+        // if(!Double.isFinite(partition))
+           // throw new RuntimeException("Gravity Model Transition: encountered NaN");
 
-        for(int gravity = 0; gravity < 4; ++gravity)
-            probable[gravity] /= partition;
+        for(Gravity gravity : Gravity.values())
+            probable[gravity.ordinal()] /= partition;
 
         return probable;
     }

@@ -13,11 +13,11 @@ public class GravityRepresentation implements Representation {
 
     private final NavGrid grid;
 
-    private final int[][] colors;
+    private final Colors[][] colors;
 
     private final RewardMapping rewards;
 
-    GravityRepresentation(NavGrid grid, int[][] colors, int depth) {
+    GravityRepresentation(NavGrid grid, Colors[][] colors, int depth) {
         this.grid = grid;
         this.colors = colors;
         this.depth = depth;

@@ -1,204 +1,244 @@
 package bam.domains.gravity_world;
 
+import bam.algorithms.Dynamics;
 import bam.domains.Environment;
+import bam.algorithms.Representation;
+import bam.domains.Task;
 import bam.domains.NavGrid;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 
-import java.util.Arrays;
+import java.awt.*;
+import java.awt.geom.AffineTransform;
+import java.awt.image.BufferedImage;
+import java.util.*;
+import java.util.List;
 
-public class GravityWorld {
-
-    // Cell colors -- clear should  be the last color, to give the number of colors, and to index arrays by color
-    public static final int BLUE= 0;
-    public static final int ORANGE = 1;
-    public static final int GREEN = 2;
-    public static final int PURPLE = 3;
-    public static final int CLEAR = 4;
-
-    // Gravity directions -- each direction's constant matches the action it prevents, to make the logic simpler
-    public static final int NORTH = 0;
-    public static final int SOUTH = 1;
-    public static final int EAST = 2;
-    public static final int WEST = 3;
-
-    // The mapping from gravity directions to blocked actions
-    static final int[] BLOCKED = new int[] { NavGrid.DOWN, NavGrid.UP, NavGrid.LEFT, NavGrid.RIGHT };
+public class GravityWorld implements Environment {
 
     // The size of each grid cell in pixels, for visualization.
     static final int SCALE = 40;
 
+    public class Task implements bam.domains.Task {
+
+        private final int row, column;
+        private final String name;
+        private final double[] rewards;
+
+        private Task(String name, int row, int column) {
+            this.name = name;
+            this.row = row;
+            this.column = column;
+
+            // Initialize reward function
+            rewards = new double[grid.numCells()];
+            Arrays.fill(rewards, 0.0);
+
+            // Set goal reward
+            rewards[grid.index(row, column)] = 1.0;
+        }
+
+        private Task(JSONObject config) throws JSONException {
+            this(config.getString("name"), config.getInt("row"), config.getInt("column"));
+        }
+
+        public int row() {
+            return row;
+        }
+
+        public int column() {
+            return column;
+        }
+
+        @Override
+        public int initial(Random random) {
+
+            int row = random.nextInt(grid.height());
+            int col = random.nextInt(grid.width());
+            int gravity = random.nextInt(4);
+
+            return (gravity * grid.numCells()) + grid.index(row, col);
+        }
+
+        @Override
+        public String name() {
+            return name;
+        }
+
+        @Override
+        public double reward(int state) {
+            return rewards[state % grid.numCells()];
+        }
+
+        @Override
+        public JSONObject serialize() throws JSONException {
+            return new JSONObject()
+                    .put("name", name())
+                    .put("row", row)
+                    .put("column", column);
+        }
+    }
+
+    private final String name;
+
+    private final Colors[][] colors;
+    private final Gravity[] gravity;
+    private final NavGrid grid;
+    private final int depth;
+
+    private final List<Task> tasks;
+
+    private final GravityDynamics dynamics;
+    private final GravityRepresentation representation;
+
+    GravityWorld(String name, NavGrid grid, Colors[][] colors, Gravity[] gravity) {
+        this.name = name;
+        this.grid = grid;
+        this.colors = colors;
+        this.gravity = gravity;
+
+        depth = 4 * (grid.width() + grid.height());
+
+        tasks = new LinkedList<>();
+
+        dynamics = new GravityDynamics(grid, colors, gravity, depth);
+        representation = new GravityRepresentation(grid, colors, depth);
+    }
+
+    private void addGoal(JSONObject config) throws JSONException { tasks.add(this.new Task(config)); }
+
     /**
-     * Creates a new gravity world environment.
+     * Adds a new task with a goal at the given row and column.
      *
-     * @param name the name of the environment
-     * @param grid the underlying navigation grid
-     * @param colors the colors of the cells
-     * @param gravity the gravity associated with each color
-     * @return the new environment
+     * @param name the name of this task
+     * @param row the row of the goal
+     * @param column the column of the goal
      */
-    public static GravityEnvironment environment(String name, NavGrid grid, int[][] colors, int[] gravity) {
-        return new GravityEnvironment(name, grid, colors, gravity);
+    public void addGoal(String name, int row, int column) {  tasks.add(this.new Task(name, row, column)); }
+
+    public int width() {
+        return grid.width();
     }
 
-    /////////////////////////////////////////////
-    // Constructors for Predefined Grid Worlds //
-    /////////////////////////////////////////////
+    public int height() {
+        return grid.height();
+    }
 
-    public static Environment flip() {
+    public int index(int row, int column, Gravity gravity) {
+        return (gravity.ordinal() * grid.numCells()) + grid.index(row, column);
+    }
 
-        // Initialize navigation grid
-        NavGrid grid = new NavGrid(5, 5, NavGrid.FOUR);
+    public int row(int index) {
+        return grid.row(index);
+    }
 
-        // Set cell colors
-        int[][] colors = new int[grid.height()][grid.width()];
+    public int column(int index) {
+        return grid.column(index);
+    }
+
+    public Gravity gravity(int state) { return Gravity.values()[state / grid.numCells()]; }
+
+    public Gravity[] gravity() { return gravity; }
+
+    public Colors[][] colors() { return colors; }
+
+    @Override
+    public Dynamics dynamics() {
+        return dynamics;
+    }
+
+    @Override
+    public List<? extends Task> tasks() {
+        return tasks;
+    }
+
+    @Override
+    public Representation representation() {
+        return representation;
+    }
+
+    @Override
+    public Optional<? extends BufferedImage> render() {
+        BufferedImage image = new BufferedImage(grid.width() * SCALE,
+                grid.height() * SCALE, BufferedImage.TYPE_INT_RGB);
+        Graphics2D graphics = image.createGraphics();
+
+        graphics.translate(0, image.getHeight());
+        graphics.scale(1, -1);
+
+        graphics.setPaint(new Color(85,105,205));
+        graphics.fillRect(0, 0, image.getWidth(), image.getHeight());
+
+        Shape[] shapes = new Shape[4];
+        shapes[Gravity.NORTH.ordinal()] = new Polygon(new int[] {0, SCALE / 2, SCALE}, new int[]{0, SCALE, 0}, 3);
+        shapes[Gravity.SOUTH.ordinal()] = new Polygon(new int[] {0, SCALE / 2, SCALE}, new int[]{SCALE, 0, SCALE}, 3);
+        shapes[Gravity.EAST.ordinal()] = new Polygon(new int[]{0, SCALE, 0}, new int[] {0, SCALE / 2, SCALE}, 3);
+        shapes[Gravity.WEST.ordinal()] = new Polygon(new int[]{SCALE, 0, SCALE}, new int[] {0, SCALE / 2, SCALE}, 3);
 
         for(int row = 0; row < grid.height(); ++row)
-            Arrays.fill(colors[row], CLEAR);
+            for(int column = 0; column < grid.width(); ++column) {
+                Colors color = colors[row][column];
 
-        colors[0][2] = ORANGE;
-        colors[4][2] = GREEN;
+                if(Colors.CLEAR != color) {
+                    graphics.setPaint(color.paint);
+                    graphics.fill(AffineTransform
+                            .getTranslateInstance(column * SCALE, row * SCALE)
+                            .createTransformedShape(shapes[gravity[color.ordinal()].ordinal()]));
+                }
+            }
 
-        // Set gravity mapping
-        int[] gravity = new int[CLEAR];
-        gravity[ORANGE] = NORTH;
-        gravity[GREEN] = SOUTH;
+        return Optional.of(image);
+    }
 
-        // Build environment
-        GravityEnvironment environment = new GravityEnvironment("flip", grid, colors, gravity);
+    @Override
+    public String name() {
+        return name;
+    }
 
-        // Define goals
-        environment.addGoal("left", 2, 0);
-        environment.addGoal("right", 2, 4);
+    @Override
+    public JSONObject serialize() throws JSONException {
+        JSONArray tsks  =new JSONArray();
+
+        for(Task task : tasks)
+            tsks.put(task.serialize());
+
+        return new JSONObject()
+                .put("name", name())
+                .put("class", getClass().getSimpleName())
+                .put("grid", grid.serialize())
+                .put("colors", new JSONArray(colors))
+                .put("gravity", new JSONArray(gravity))
+                .put("tasks", tsks);
+    }
+
+    public static GravityWorld load(JSONObject config) throws JSONException {
+        String name = config.getString("name");
+        NavGrid grid = NavGrid.load(config.getJSONObject("grid"));
+
+        Colors[][] colors = new Colors[grid.height()][grid.width()];
+        JSONArray rows = config.getJSONArray("colors");
+
+        for(int row = 0; row < grid.height(); ++row) {
+            JSONArray columns = rows.getJSONArray(row);
+
+            for(int column = 0; column < grid.width(); ++column)
+                colors[row][column] = columns.getEnum(Colors.class, column);
+        }
+
+        Gravity[] gravity = new Gravity[Colors.values().length];
+        JSONArray mapping = config.getJSONArray("gravity");
+
+        for(int color = 0; color < Colors.values().length; ++color)
+            gravity[color] = mapping.getEnum(Gravity.class, color);
+
+        GravityWorld environment = new GravityWorld(name, grid, colors, gravity);
+
+        JSONArray tasks = config.getJSONArray("tasks");
+
+        for(int task = 0; task < tasks.length(); ++task)
+            environment.addGoal(tasks.getJSONObject(task));
 
         return environment;
     }
-
-    public static Environment medium_flip() {
-
-        // Initialize navigation grid
-        NavGrid grid = new NavGrid(10, 10, NavGrid.FOUR);
-
-        // Set cell colors
-        int[][] colors = new int[grid.height()][grid.width()];
-
-        for(int row = 0; row < grid.height(); ++row)
-            Arrays.fill(colors[row], CLEAR);
-
-        colors[0][1] = ORANGE;
-        colors[0][4] = ORANGE;
-        colors[0][8] = ORANGE;
-
-        colors[9][1] = GREEN;
-        colors[9][4] = GREEN;
-        colors[9][8] = GREEN;
-
-        // Set gravity mapping
-        int[] gravity = new int[CLEAR];
-        gravity[ORANGE] = NORTH;
-        gravity[GREEN] = SOUTH;
-
-        // Build environment
-        GravityEnvironment environment = new GravityEnvironment("medium-flip", grid, colors, gravity);
-
-        // Define goals
-        environment.addGoal("left", 4, 0);
-        environment.addGoal("right", 4, 9);
-
-        return environment;
-    }
-
-    public static Environment large_flip() {
-
-        // Initialize navigation grid
-        NavGrid grid = new NavGrid(20, 20, NavGrid.FOUR);
-
-        // Set cell colors
-        int[][] colors = new int[grid.height()][grid.width()];
-
-        for(int row = 0; row < grid.height(); ++row)
-            Arrays.fill(colors[row], CLEAR);
-
-        colors[0][4] = ORANGE;
-        colors[0][10] = ORANGE;
-        colors[0][16] = ORANGE;
-
-        colors[19][4] = GREEN;
-        colors[19][10] = GREEN;
-        colors[19][16] = GREEN;
-
-        // Set gravity mapping
-        int[] gravity = new int[CLEAR];
-        gravity[ORANGE] = NORTH;
-        gravity[GREEN] = SOUTH;
-
-        // Build environment
-        GravityEnvironment environment = new GravityEnvironment("large-flip", grid, colors, gravity);
-
-        // Define goals
-        environment.addGoal("left", 10, 0);
-        environment.addGoal("right", 10, 19);
-
-        return environment;
-    }
-
-    public static Environment wall() {
-
-        // Initialize navigation grid
-        NavGrid grid = new NavGrid(5, 5, NavGrid.FOUR);
-
-        // Set cell colors
-        int[][] colors = new int[grid.height()][grid.width()];
-
-        for(int row = 0; row < grid.height(); ++row)
-            Arrays.fill(colors[row], CLEAR);
-
-        colors[1][2] = GREEN;
-        colors[2][2] = GREEN;
-        colors[3][2] = GREEN;
-
-        // Set gravity mapping
-        int[] gravity = new int[CLEAR];
-        gravity[GREEN] = EAST;
-
-        // Build environment
-        GravityEnvironment environment = new GravityEnvironment("wall", grid, colors, gravity);
-
-        // Define goals
-        environment.addGoal("top-left", 0, 0);
-        environment.addGoal("bottom-left", 4, 0);
-
-        return environment;
-    }
-
-    public static Environment choices() {
-        // Initialize navigation grid
-        NavGrid grid = new NavGrid(15, 4, NavGrid.FOUR);
-
-        // Set cell colors
-        int[][] colors = new int[grid.height()][grid.width()];
-
-        for(int row = 0; row < grid.height(); ++row)
-            Arrays.fill(colors[row], CLEAR);
-
-        colors[0][4] = ORANGE;
-        colors[0][10] = ORANGE;
-
-        colors[0][1] = GREEN;
-        colors[0][13] = PURPLE;
-
-        // Set gravity mapping
-        int[] gravity = new int[CLEAR];
-        gravity[ORANGE] = SOUTH;
-        gravity[GREEN] = NORTH;
-        gravity[PURPLE] = NORTH;
-
-        // Build environment
-        GravityEnvironment environment = new GravityEnvironment("choices", grid, colors, gravity);
-
-        // Define goals
-        environment.addGoal("bottom-left", 3, 0);
-        environment.addGoal("bottom-right", 3, 14);
-
-        return environment;
-    }
-
 }

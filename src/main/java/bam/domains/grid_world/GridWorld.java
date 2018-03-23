@@ -16,6 +16,14 @@ import java.util.List;
 
 public class GridWorld implements Environment {
 
+    /**
+     * The size of each grid cell in pixels, for visualization.
+     */
+    public static final int SCALE = 40;
+
+    /**
+     * Represents a single, named goal location in the grid world
+     */
     public class Task implements bam.domains.Task {
 
         private final int row, column;
@@ -33,6 +41,10 @@ public class GridWorld implements Environment {
 
             // Set goal reward
             rewards[grid.index(row, column)] = 1.0;
+        }
+
+        private Task(JSONObject config) throws JSONException {
+            this(config.getString("name"), config.getInt("row"), config.getInt("columns"));
         }
 
         public int row() {
@@ -69,8 +81,8 @@ public class GridWorld implements Environment {
         public JSONObject serialize() throws JSONException {
             return new JSONObject()
                     .put("name", name())
-                    .put("goal row", row)
-                    .put("goal column", column);
+                    .put("row", row)
+                    .put("column", column);
         }
     }
 
@@ -98,6 +110,8 @@ public class GridWorld implements Environment {
         representation = new GridRepresentation(grid, depth);
     }
 
+    private void addGoal(JSONObject config) throws JSONException {  tasks.add(this.new Task(config)); }
+
     /**
      * Adds a new task with a goal at the given row and column.
      *
@@ -105,19 +119,7 @@ public class GridWorld implements Environment {
      * @param row the row of the goal
      * @param column the column of the goal
      */
-    public void addGoal(String name, int row, int column) {
-        tasks.add(new Task(name, row, column));
-    }
-
-    /**
-     * Adds a new goal based on its JSON representation.
-     *
-     * @param config the JSON representation of the goal
-     * @throws JSONException
-     */
-    public void addGoal(JSONObject config) throws JSONException {
-
-    }
+    public void addGoal(String name, int row, int column) { tasks.add(this.new Task(name, row, column)); }
 
     public int width() {
         return grid.width();
@@ -139,9 +141,7 @@ public class GridWorld implements Environment {
         return grid.column(index);
     }
 
-    public boolean occupied(int row, int column) {
-        return map[row][column];
-    }
+    public boolean[][] map() { return map; }
 
     @Override
     public Dynamics dynamics() {
@@ -160,8 +160,8 @@ public class GridWorld implements Environment {
 
     @Override
     public Optional<? extends BufferedImage> render() {
-        BufferedImage image = new BufferedImage(grid.width() * GridWorlds.SCALE,
-                grid.height() * GridWorlds.SCALE, BufferedImage.TYPE_INT_RGB);
+        BufferedImage image = new BufferedImage(grid.width() * SCALE,
+                grid.height() * SCALE, BufferedImage.TYPE_INT_RGB);
         Graphics2D graphics = image.createGraphics();
 
         graphics.translate(0, image.getHeight());
@@ -175,8 +175,7 @@ public class GridWorld implements Environment {
         for(int row = 0; row < grid.height(); ++row)
             for(int column = 0; column < grid.width(); ++column)
                 if(map[row][column])
-                    graphics.fillRect(column * GridWorlds.SCALE,
-                            row * GridWorlds.SCALE, GridWorlds.SCALE, GridWorlds.SCALE);
+                    graphics.fillRect(column * SCALE,row * SCALE, SCALE, SCALE);
 
         return Optional.of(image);
     }
@@ -189,18 +188,6 @@ public class GridWorld implements Environment {
     @Override
     public JSONObject serialize() throws JSONException {
 
-        // Serialize map
-        JSONArray rows = new JSONArray();
-
-        for(int row = 0; row < grid.height(); ++row) {
-            JSONArray columns = new JSONArray();
-
-            for(int column = 0; column < grid.width(); ++column)
-                columns.put(map[row][column]);
-
-            rows.put(columns);
-        }
-
         // Serialize tasks
         JSONArray json_tasks = new JSONArray();
 
@@ -211,7 +198,7 @@ public class GridWorld implements Environment {
                 .put("name", name())
                 .put("class", getClass().getSimpleName())
                 .put("grid", grid.serialize())
-                .put("map", rows)
+                .put("map", new JSONArray(map))
                 .put("tasks", json_tasks);
     }
 

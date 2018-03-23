@@ -2,6 +2,7 @@ package bam.domains;
 
 import bam.algorithms.Dynamics;
 import bam.algorithms.Representation;
+import bam.domains.gravity_world.GravityWorld;
 import bam.domains.grid_world.GridWorld;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -97,6 +98,8 @@ public interface Environment {
 
         if(className.equals(GridWorld.class.getSimpleName()))
             return GridWorld.load(config);
+        else if(className.equals(GravityWorld.class.getSimpleName()))
+            return GravityWorld.load(config);
 
         throw new RuntimeException("Unknown Implementation of 'Environment' requested");
     }

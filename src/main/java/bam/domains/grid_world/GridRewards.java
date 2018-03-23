@@ -47,8 +47,8 @@ class GridRewards implements RewardMapping {
         double range = 0.01 + (float)(max - min);
 
         // Render image
-        BufferedImage image = new BufferedImage(width * GridWorlds.SCALE,
-                height * GridWorlds.SCALE, BufferedImage.TYPE_INT_RGB);
+        BufferedImage image = new BufferedImage(width * GridWorld.SCALE,
+                height * GridWorld.SCALE, BufferedImage.TYPE_INT_RGB);
         Graphics2D graphics = image.createGraphics();
 
         graphics.translate(0, image.getHeight());
@@ -59,8 +59,8 @@ class GridRewards implements RewardMapping {
                 float hue = 0.65f * (float)(1.0 - (intent[row + (column * height)] - min) / range);
 
                 graphics.setPaint(Color.getHSBColor(hue, 1f, 1f));
-                graphics.fillRect(column * GridWorlds.SCALE,
-                        row * GridWorlds.SCALE, GridWorlds.SCALE, GridWorlds.SCALE);
+                graphics.fillRect(column * GridWorld.SCALE,
+                        row * GridWorld.SCALE, GridWorld.SCALE, GridWorld.SCALE);
             }
 
         return Optional.of(image);

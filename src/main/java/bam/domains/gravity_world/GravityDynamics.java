@@ -16,8 +16,8 @@ public class GravityDynamics implements Dynamics {
     // Transition distribution
     private final double[] determined = new double[] { 1.0 };
 
-    GravityDynamics(NavGrid grid, int[][] colors, int[] gravity, int depth) {
-        this.num_states = 4 * grid.numCells();
+    GravityDynamics(NavGrid grid, Colors[][] colors, Gravity[] mapping, int depth) {
+        this.num_states = Gravity.values().length * grid.numCells();
         this.num_actions = 5; // Even if the grid is eight connected, only allow five moves
         this.depth = depth;
 
@@ -27,13 +27,13 @@ public class GravityDynamics implements Dynamics {
             int row = grid.row(cell);
             int column = grid.column(cell);
 
-            if(GravityWorld.CLEAR == colors[row][column]) {
-                for(int grav = 0; grav < 4; ++grav) {
-                    int offset = grav * grid.numCells();
+            if(Colors.CLEAR == colors[row][column]) {
+                for(Gravity gravity : Gravity.values()) {
+                    int offset = gravity.ordinal() * grid.numCells();
                     int state = offset + cell;
 
                     for(int action = 0; action < num_actions; ++action) {
-                        if(action != GravityWorld.BLOCKED[grav])
+                        if(action != gravity.blocks)
                             successors[state][action][0] = offset + grid.next(cell, action);
                         else
                             successors[state][action][0] = state;
@@ -41,14 +41,14 @@ public class GravityDynamics implements Dynamics {
                 }
             }
             else {
-                int change = gravity[colors[row][column]];
-                int offset = change * grid.numCells();
+                Gravity new_gravity = mapping[colors[row][column].ordinal()];
+                int offset = new_gravity.ordinal() * grid.numCells();
 
-                for(int grav = 0; grav < 4; ++grav) {
-                    int state = grav * grid.numCells() + cell;
+                for(Gravity gravity : Gravity.values()) {
+                    int state = (gravity.ordinal() * grid.numCells()) + cell;
 
                     for(int action = 0; action < num_actions; ++action) {
-                        if(action != GravityWorld.BLOCKED[change])
+                        if(action != new_gravity.blocks)
                             successors[state][action][0] = offset + grid.next(cell, action);
                         else
                             successors[state][action][0] = offset + cell;

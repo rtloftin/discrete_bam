@@ -11,11 +11,6 @@ import bam.domains.NavGrid;
 public class GridWorlds {
 
     /**
-     * The size of each grid cell in pixels, for visualization.
-     */
-    static final int SCALE = 40;
-
-    /**
      * Creates a new grid world with the given occupancy map.
      *
      * @param name the name of the environment
@@ -185,6 +180,83 @@ public class GridWorlds {
         // Initialize tasks
         environment.addGoal("left",6, 0);
         environment.addGoal("right", 6, 12);
+
+        return environment;
+    }
+
+    public static GridWorld room() {
+
+        // Initialize grid
+        NavGrid grid = new NavGrid(11, 11, NavGrid.FOUR);
+
+        // Initialize map
+        boolean[][] map = new boolean[grid.height()][grid.width()];
+
+        for(int i=0; i < map.length; ++i)
+            for(int j=0; j < map[i].length; ++j)
+                map[i][j] = false;
+
+        for(int i=3; i < 8; ++i) {
+            map[3][i] = true;
+            map[7][i] = true;
+        }
+
+        map[4][3] = true;
+        map[4][7] = true;
+        map[6][3] = true;
+        map[6][7] = true;
+
+        // Create environment
+        GridWorld environment = new GridWorld("room", grid, map);
+
+        // Initialize tasks
+        environment.addGoal("Top",0, 5);
+        environment.addGoal("Bottom", 10, 5);
+
+        return environment;
+    }
+
+    public static GridWorld doors() {
+
+        // Initialize grid
+        NavGrid grid = new NavGrid(13, 9, NavGrid.FOUR);
+
+        // Initialize map
+        boolean[][] map = new boolean[grid.height()][grid.width()];
+
+        for(int i=0; i < map.length; ++i)
+            for(int j=0; j < map[i].length; ++j)
+                map[i][j] = false;
+
+        for(int i=0; i < 13; ++i) {
+            map[0][i] = true;
+            map[8][i] = true;
+        }
+
+        for(int i=1; i < 8; ++i) {
+            map[i][0] = true;
+            map[i][12] = true;
+        }
+
+        for(int i=0; i < 5; ++i) {
+            map[4][1 + i] = true;
+            map[4][7 + i] = true;
+        }
+
+        map[1][4] = true;
+        map[1][8] = true;
+        map[3][4] = true;
+        map[3][8] = true;
+
+        // Create environment
+        GridWorld environment = new GridWorld("doors", grid, map);
+
+        // Initialize tasks
+        environment.addGoal("Top", 2, 6);
+        environment.addGoal("Top Left",2, 2);
+        environment.addGoal("Top Right", 2, 10);
+        environment.addGoal("Left",6, 2);
+        environment.addGoal("Right", 6, 10);
 
         return environment;
     }

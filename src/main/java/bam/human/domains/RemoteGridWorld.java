@@ -43,7 +43,6 @@ public class RemoteGridWorld implements Remote {
             setState(initial);
         else
             resetState();
-
     }
 
     private void setTask(String name) {
@@ -63,9 +62,7 @@ public class RemoteGridWorld implements Remote {
         return new RemoteGridWorld(environment, agent, initial);
     }
 
-    public static Remote.Factory load(JSONObject config) throws JSONException {
-        GridWorld environment = GridWorld.load(config);
-
+    public static Remote.Factory with(GridWorld environment) {
         return new Factory() {
             @Override
             public Remote build(Algorithm algorithm, JSONObject initial) throws JSONException {
@@ -77,6 +74,10 @@ public class RemoteGridWorld implements Remote {
                 return environment.serialize();
             }
         };
+    }
+
+    public static Remote.Factory load(JSONObject config) throws JSONException {
+        return with(GridWorld.load(config));
     }
 
     @Override
@@ -206,33 +207,18 @@ public class RemoteGridWorld implements Remote {
 
     @Override
     public synchronized JSONObject getLayout() throws JSONException {
-        JSONObject layout = new JSONObject();
-        layout.put("width", environment.width());
-        layout.put("height", environment.height());
-
-        // Write occupancy map
-        JSONArray rows = new JSONArray();
-
-        for(int row = 0; row < environment.height(); ++row) {
-            JSONArray columns = new JSONArray();
-
-            for(int column = 0; column < environment.width(); ++column)
-                columns.put(column, environment.occupied(row, column));
-
-            rows.put(row, columns);
-        }
-
-        layout.put("map", rows);
 
         // Write task
         JSONObject task = new JSONObject();
         task.put("x", current_task.column());
         task.put("y", current_task.row());
 
-        layout.put("task", task);
-
         // Return layout representation
-        return layout;
+        return new JSONObject()
+                .put("width", environment.width())
+                .put("height", environment.height())
+                .put("map", new JSONArray(environment.map()))
+                .put("task", task);
     }
 
     @Override
