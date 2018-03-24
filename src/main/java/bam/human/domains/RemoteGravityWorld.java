@@ -6,9 +6,11 @@ import bam.algorithms.StateTransition;
 import bam.algorithms.TeacherAction;
 import bam.domains.NavGrid;
 import bam.domains.Task;
+import bam.domains.gravity_world.Colors;
 import bam.domains.gravity_world.Gravity;
 import bam.domains.gravity_world.GravityWorld;
 import bam.human.Remote;
+import netscape.javascript.JSObject;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -41,7 +43,7 @@ public class RemoteGravityWorld implements Remote {
 
         // Set initial state
         if(initial.has("state"))
-            setState(initial);
+            setState(initial.getJSONObject("state"));
         else
             resetState();
     }
@@ -215,12 +217,18 @@ public class RemoteGravityWorld implements Remote {
         task.put("x", current_task.column());
         task.put("y", current_task.row());
 
+        // Write gravity
+        JSONObject gravity = new JSONObject();
+
+        for(Colors color : Colors.values())
+            gravity.put(color.toString(), environment.gravity()[color.ordinal()]);
+
         // Return layout representation
         return new JSONObject()
                 .put("width", environment.width())
                 .put("height", environment.height())
                 .put("colors", new JSONArray(environment.colors()))
-                .put("gravity", new JSONArray(environment.gravity()))
+                .put("gravity", gravity)
                 .put("task", task);
     }
 

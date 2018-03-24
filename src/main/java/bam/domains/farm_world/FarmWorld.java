@@ -60,7 +60,7 @@ public class FarmWorld implements Environment {
         }
 
         @Override
-        public double reward(int state) { return rewards[state]; }
+        public double reward(int state) { return rewards[state / Machine.values().length ]; }
 
         @Override
         public String name() { return name; }
@@ -126,7 +126,7 @@ public class FarmWorld implements Environment {
 
     public int column(int state) {return grid.column(state / Machine.values().length); }
 
-    public Machine machine(int state) { return null; }
+    public Machine machine(int state) { return Machine.values()[state % Machine.values().length]; }
 
     public Terrain[][] map() { return map; }
 

@@ -41,7 +41,7 @@ public class RemoteFarmWorld implements Remote {
 
         // Set initial state
         if(initial.has("state"))
-            setState(initial);
+            setState(initial.getJSONObject("state"));
         else
             resetState();
     }

@@ -1,5 +1,8 @@
 package bam.human;
 
+import netscape.javascript.JSObject;
+import org.json.JSONObject;
+
 import java.util.LinkedList;
 import java.util.List;
 
@@ -57,13 +60,14 @@ class Users {
                     current_session.end("finished");
                     current_session = null;
 
+                    message.respond();
+
                     log.write("SESSION: user ended session");
                 }
             }).add("complete", (Connection.Message message) -> {
                 connection.close("complete");
             });
 
-            // Open connection
             connection.open((String reason) -> {
                 if(null != current_session)
                     current_session.end(reason);

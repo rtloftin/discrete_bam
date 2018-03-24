@@ -42,9 +42,17 @@ public interface Connection {
          * provided a response.
          *
          * @param response the data for the message response
-         * @throws JSONException if the response data is not properly formatted
          */
         void respond(JSONObject response);
+
+        /**
+         * Responds to the message.  Does nothing
+         * if a previous handler has already
+         * provided a response.
+         */
+        default void respond() {
+            respond(new JSONObject());
+        }
 
         /**
          * Indicates that there was an error handing this message.

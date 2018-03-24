@@ -40,7 +40,7 @@ public class RemoteGridWorld implements Remote {
 
         // Set initial state
         if(initial.has("state"))
-            setState(initial);
+            setState(initial.getJSONObject("state"));
         else
             resetState();
     }
@@ -209,11 +209,10 @@ public class RemoteGridWorld implements Remote {
     public synchronized JSONObject getLayout() throws JSONException {
 
         // Write task
-        JSONObject task = new JSONObject();
-        task.put("x", current_task.column());
-        task.put("y", current_task.row());
+        JSONObject task = new JSONObject()
+                .put("x", current_task.column())
+                .put("y", current_task.row());
 
-        // Return layout representation
         return new JSONObject()
                 .put("width", environment.width())
                 .put("height", environment.height())

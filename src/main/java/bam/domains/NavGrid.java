@@ -60,20 +60,20 @@ public class NavGrid {
             for(int column = 0; column < width; ++column) {
                 int state = index(row, column);
 
-                if(height - 1 == row)
+                if(0 == row)
                     successors[state][UP] = state;
                 else
-                    successors[state][UP] = index(row + 1, column);
+                    successors[state][UP] = index(row - 1, column);
             }
 
         for(int row = 0; row < height; ++row) // DOWN
             for(int column = 0; column < width; ++column) {
                 int state = index(row, column);
 
-                if(0 == row)
+                if(height - 1 == row)
                     successors[state][DOWN] = state;
                 else
-                    successors[state][DOWN] = index(row - 1, column);
+                    successors[state][DOWN] = index(row + 1, column);
             }
 
         for(int row = 0; row < height; ++row) // LEFT

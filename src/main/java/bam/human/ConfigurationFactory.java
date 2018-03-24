@@ -10,7 +10,6 @@ import bam.algorithms.optimization.Momentum;
 import bam.algorithms.planning.BoltzmannPlanner;
 import bam.algorithms.variational.PointDensity;
 
-import bam.domains.Environment;
 import bam.domains.Experts;
 import bam.domains.farm_world.FarmWorld;
 import bam.domains.farm_world.FarmWorlds;
@@ -154,11 +153,11 @@ public class ConfigurationFactory implements Session.Factory {
         Domain grid_world = new Domain("grid world", room_layout);
 
         // Gravity world tutorial domain and expert agent
-        GravityWorld wall = GravityWorlds.wall();
-        Algorithm wall_expert = Experts.algorithm(wall);
+        GravityWorld flip = GravityWorlds.medium_flip();
+        Algorithm flip_expert = Experts.algorithm(flip);
 
-        Layout wall_layout = new Layout("wall", RemoteGravityWorld.with(wall), bam, wall_expert);
-        Domain gravity_world = new Domain("gravity world", wall_layout);
+        Layout flip_layout = new Layout("flip", RemoteGravityWorld.with(flip), bam, flip_expert);
+        Domain gravity_world = new Domain("gravity world", flip_layout);
 
         // Gravity world tutorial domain and expert agent
         FarmWorld example = FarmWorlds.example();

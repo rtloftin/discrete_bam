@@ -147,6 +147,22 @@ public class Session {
                 message.capture();
                 message.respond(response);
             } catch(JSONException e) { debug.write("ERROR: json exception"); }
+        }).add("set-state", (Connection.Message message) -> {
+            try {
+                debug.write("set state");
+
+                remote.setState(message.data());
+                JSONObject response = new JSONObject()
+                        .put("state", remote.getState())
+                        .put("layout", remote.getLayout());
+
+                record("set-state")
+                        .put("data", message.data())
+                        .put("response", response);
+
+                message.capture();
+                message.respond(response);
+            } catch(JSONException e) { debug.write("ERROR: json exception"); }
         });
 
         debug.write("session started");

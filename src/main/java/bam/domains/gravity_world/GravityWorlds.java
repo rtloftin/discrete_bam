@@ -46,8 +46,8 @@ public class GravityWorlds {
         GravityWorld environment = new GravityWorld("flip", grid, colors, gravity);
 
         // Define goals
-        environment.addGoal("left", 2, 0);
-        environment.addGoal("right", 2, 4);
+        environment.addGoal("Left", 2, 0);
+        environment.addGoal("Right", 2, 4);
 
         return environment;
     }
@@ -73,15 +73,15 @@ public class GravityWorlds {
 
         // Set gravity mapping
         Gravity[] gravity = new Gravity[Colors.values().length];
-        gravity[Colors.ORANGE.ordinal()] = Gravity.NORTH;
-        gravity[Colors.GREEN.ordinal()] = Gravity.SOUTH;
+        gravity[Colors.ORANGE.ordinal()] = Gravity.SOUTH;
+        gravity[Colors.GREEN.ordinal()] = Gravity.NORTH;
 
         // Build environment
         GravityWorld environment = new GravityWorld("medium-flip", grid, colors, gravity);
 
         // Define goals
-        environment.addGoal("left", 4, 0);
-        environment.addGoal("right", 4, 9);
+        environment.addGoal("Left", 4, 0);
+        environment.addGoal("Right", 4, 9);
 
         return environment;
     }
@@ -114,8 +114,8 @@ public class GravityWorlds {
         GravityWorld environment = new GravityWorld("large-flip", grid, colors, gravity);
 
         // Define goals
-        environment.addGoal("left", 10, 0);
-        environment.addGoal("right", 10, 19);
+        environment.addGoal("Left", 10, 0);
+        environment.addGoal("Right", 10, 19);
 
         return environment;
     }
@@ -143,8 +143,8 @@ public class GravityWorlds {
         GravityWorld environment = new GravityWorld("wall", grid, colors, gravity);
 
         // Define goals
-        environment.addGoal("top-left", 0, 0);
-        environment.addGoal("bottom-left", 4, 0);
+        environment.addGoal("Top Left", 0, 0);
+        environment.addGoal("Bottom Left", 4, 0);
 
         return environment;
     }
@@ -176,8 +176,8 @@ public class GravityWorlds {
         GravityWorld environment = new GravityWorld("choices", grid, colors, gravity);
 
         // Define goals
-        environment.addGoal("bottom-left", 3, 0);
-        environment.addGoal("bottom-right", 3, 14);
+        environment.addGoal("Bottom Left", 3, 0);
+        environment.addGoal("Bottom Right", 3, 14);
 
         return environment;
     }
