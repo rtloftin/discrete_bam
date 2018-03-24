@@ -82,9 +82,8 @@ public class NormalizedActionModel implements ActionModel {
             partition += policy[i];
         }
 
-        if(!Double.isFinite(partition) || 0 == partition)
-            throw new RuntimeException("Normalized Action Model: Infinity, NaN, or Zero encountered, values: "
-                    + Arrays.toString(values));
+        // if(!Double.isFinite(partition) || 0 == partition)
+           //  throw new RuntimeException("Normalized Action Model: Infinity, NaN, or Zero encountered, values: " + Arrays.toString(values));
 
         for(int i=0; i < values.length; ++i)
             policy[i] /= partition;
@@ -138,9 +137,9 @@ public class NormalizedActionModel implements ActionModel {
     @Override
     public void gradient(int action, double[] values, double[] gradient, double weight) {
 
-        for(int i=0; i < values.length; ++i)
-            if(!Double.isFinite(values[i]))
-                throw new RuntimeException("Normalized action model, invalid action values provided: " + Arrays.toString(values));
+        // for(int i=0; i < values.length; ++i)
+           //  if(!Double.isFinite(values[i]))
+              //  throw new RuntimeException("Normalized action model, invalid action values provided: " + Arrays.toString(values));
 
         // Compute the differences between the mean value and each individual value
         double[] deltas = deltas(values, mean(values));
@@ -170,8 +169,8 @@ public class NormalizedActionModel implements ActionModel {
 
             gradient[a] += weight * jacobian[a];
 
-            if(!Double.isFinite(gradient[a]))
-                throw new RuntimeException("Normalized action model, invalid gradient generated");
+            // if(!Double.isFinite(gradient[a]))
+               // throw new RuntimeException("Normalized action model, invalid gradient generated");
         }
     }
 

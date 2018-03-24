@@ -51,25 +51,28 @@ class FarmModel implements DynamicsModel {
 
     @Override
     public void train(int start, int action, int end, double weight) {
-        int end_cell = dynamics.cell(end);
-        Terrain terrain = map[grid.row(end_cell)][grid.column(end_cell)];
+        int next_cell = grid.next(dynamics.cell(start), action);
+        Machine current_machine = dynamics.machine(start);
+        Terrain current_terrain = map[grid.row(next_cell)][grid.column(next_cell)];
 
-        if(Terrain.DIRT != terrain) { // If we are moving into a clear cell, do nothing
-            int offset = Machine.values().length * terrain.ordinal();
+        if(Terrain.DIRT != current_terrain && Machine.NONE != current_machine) {
+
+            if (dynamics.cell(end) != next_cell)
+                weight = -weight;
+
+            int offset = Terrain.values().length * current_machine.ordinal();
             double partition = 0.0;
 
-            for(Machine machine : Machine.values())
-                partition += Math.exp(parameters[offset + machine.ordinal()]);
+            for (Terrain terrain : Terrain.values())
+                partition += Math.exp(parameters[offset + terrain.ordinal()] - parameters[offset]);
 
-            Machine current_machine = dynamics.machine(start);
+            for (Terrain terrain : Terrain.values()) {
+                double probability = Math.exp(parameters[offset + terrain.ordinal()] - parameters[offset]) / partition;
 
-            for(Machine machine : Machine.values()) {
-                double probability = Math.exp(parameters[offset + machine.ordinal()] = parameters[offset]) / partition;
-
-                if(current_machine != machine)
-                    gradient[offset + machine.ordinal()] -= weight * probability;
+                if (current_terrain != terrain)
+                    gradient[offset + terrain.ordinal()] -= weight * probability;
                 else
-                    gradient[offset + machine.ordinal()] += weight * (1.0 - probability);
+                    gradient[offset + terrain.ordinal()] += weight * (1.0 - probability);
             }
         }
     }
@@ -115,10 +118,14 @@ class FarmModel implements DynamicsModel {
     @Override
     public int[] successors(int state, int action) {
         int next_cell = grid.next(dynamics.cell(state), action);
-        Terrain terrain = map[grid.row(next_cell)][grid.column(next_cell)];
 
-        if(Terrain.DIRT == terrain) {
+        if(Terrain.DIRT == map[grid.row(next_cell)][grid.column(next_cell)]) {
             single[0] = dynamics.next(state, action);
+            return single;
+        }
+
+        if(Machine.NONE == dynamics.machine(state)) {
+            single[0] = state;
             return single;
         }
 
@@ -131,20 +138,19 @@ class FarmModel implements DynamicsModel {
     @Override
     public double[] transitions(int state, int action) {
         int next_cell = grid.next(dynamics.cell(state), action);
-        Terrain terrain = map[grid.row(next_cell)][grid.column(next_cell)];
+        Machine current_machine = dynamics.machine(state);
+        Terrain current_terrain = map[grid.row(next_cell)][grid.column(next_cell)];
 
-        if(Terrain.DIRT == terrain)
+        if(Terrain.DIRT == current_terrain || Machine.NONE == current_machine)
             return determined;
 
-        int offset = Machine.values().length * terrain.ordinal();
+        int offset = Terrain.values().length * current_machine.ordinal();
         double partition = 0.0;
 
-        for(Machine machine : Machine.values())
-            partition += Math.exp(parameters[offset + machine.ordinal()] - parameters[offset]);
+        for(Terrain terrain : Terrain.values())
+            partition += Math.exp(parameters[offset + terrain.ordinal()] - parameters[offset]);
 
-        Machine machine = dynamics.machine(state);
-
-        probable[0] = Math.exp(parameters[offset + machine.ordinal()] = parameters[offset]) / partition;
+        probable[0] = Math.exp(parameters[offset + current_terrain.ordinal()] - parameters[offset]) / partition;
         probable[1] = 1.0 - probable[0];
 
         return probable;

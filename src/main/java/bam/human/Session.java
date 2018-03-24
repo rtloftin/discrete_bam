@@ -86,7 +86,7 @@ public class Session {
 
                 record("take-action")
                         .put("data", message.data())
-                        .put("response", response);
+                        .put("state", response.getJSONObject("state"));
 
                 message.capture();
                 message.respond(response);
@@ -101,7 +101,7 @@ public class Session {
                         .put("layout", remote.getLayout());
 
                 record("get-action")
-                        .put("response", response);
+                        .put("state", response.getJSONObject("state"));
 
                 message.capture();
                 message.respond(response);
@@ -117,7 +117,8 @@ public class Session {
 
                 record("task")
                         .put("data", message.data())
-                        .put("response", response);
+                        .put("state", response.getJSONObject("state"))
+                        .put("layout", response.getJSONObject("layout"));
 
                 message.capture();
                 message.respond(response);
@@ -142,7 +143,7 @@ public class Session {
                         .put("layout", remote.getLayout());
 
                 record("reset")
-                        .put("response", response);
+                        .put("state", response.getJSONObject("state"));
 
                 message.capture();
                 message.respond(response);
@@ -158,7 +159,7 @@ public class Session {
 
                 record("set-state")
                         .put("data", message.data())
-                        .put("response", response);
+                        .put("state", response.getJSONObject("state"));
 
                 message.capture();
                 message.respond(response);
@@ -204,7 +205,7 @@ public class Session {
 
             // Save event log
             PrintStream data = new PrintStream(directory.stream("events"));
-            data.print(events.toString(4));
+            data.print(events.toString(2));
             data.close();
         } catch(Exception e) {
             debug.write("ERROR: couldn't save session data");

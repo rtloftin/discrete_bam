@@ -10,7 +10,6 @@ import bam.domains.gravity_world.Colors;
 import bam.domains.gravity_world.Gravity;
 import bam.domains.gravity_world.GravityWorld;
 import bam.human.Remote;
-import netscape.javascript.JSObject;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;

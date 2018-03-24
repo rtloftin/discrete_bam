@@ -146,25 +146,25 @@ public class ConfigurationFactory implements Session.Factory {
                 .build();
 
         // Grid world tutorial domain and expert agent
-        GridWorld room = GridWorlds.room();
-        Algorithm room_expert = Experts.algorithm(room);
+        GridWorld grid_tutorial = GridWorlds.tutorial();
+        Algorithm grid_expert = Experts.algorithm(grid_tutorial);
 
-        Layout room_layout = new Layout("room", RemoteGridWorld.with(room), bam, room_expert);
-        Domain grid_world = new Domain("grid world", room_layout);
-
-        // Gravity world tutorial domain and expert agent
-        GravityWorld flip = GravityWorlds.medium_flip();
-        Algorithm flip_expert = Experts.algorithm(flip);
-
-        Layout flip_layout = new Layout("flip", RemoteGravityWorld.with(flip), bam, flip_expert);
-        Domain gravity_world = new Domain("gravity world", flip_layout);
+        Layout grid_layout = new Layout("tutorial", RemoteGridWorld.with(grid_tutorial), bam, grid_expert);
+        Domain grid_world = new Domain("grid world", grid_layout);
 
         // Gravity world tutorial domain and expert agent
-        FarmWorld example = FarmWorlds.example();
-        Algorithm example_expert = Experts.algorithm(example);
+        GravityWorld gravity_tutorial = GravityWorlds.tutorial();
+        Algorithm gravity_expert = Experts.algorithm(gravity_tutorial);
 
-        Layout example_layout = new Layout("example", RemoteFarmWorld.with(example), bam, example_expert);
-        Domain farm_world = new Domain("farm world", example_layout);
+        Layout gravity_layout = new Layout("tutorial", RemoteGravityWorld.with(gravity_tutorial), bam, gravity_expert);
+        Domain gravity_world = new Domain("gravity world", gravity_layout);
+
+        // Farm world tutorial domain and expert agent
+        FarmWorld farm_tutorial = FarmWorlds.tutorial();
+        Algorithm farm_expert = Experts.algorithm(farm_tutorial);
+
+        Layout farm_layout = new Layout("tutorial", RemoteFarmWorld.with(farm_tutorial), bam, farm_expert);
+        Domain farm_world = new Domain("farm world", farm_layout);
 
         return new ConfigurationFactory(grid_world, gravity_world, farm_world);
     }
@@ -202,10 +202,24 @@ public class ConfigurationFactory implements Session.Factory {
                 .build();
 
         // Grid World Domain
+        GridWorld grid_tutorial = GridWorlds.tutorial();
+        Algorithm grid_expert = Experts.algorithm(grid_tutorial);
+
+        Layout grid_layout = new Layout("tutorial", RemoteGridWorld.with(grid_tutorial), grid_expert);
+        Layout two_rooms = new Layout("two-rooms", RemoteGridWorld.with(GridWorlds.twoRooms()), bam, model, cloning);
+        Layout doors = new Layout("doors", RemoteGridWorld.with(GridWorlds.doors()), bam, model, cloning);
+        Domain grid_world = new Domain("grid world", grid_layout, two_rooms, doors);
 
         // Farm World Domain
+        FarmWorld farm_tutorial = FarmWorlds.tutorial();
+        Algorithm farm_expert = Experts.algorithm(farm_tutorial);
 
-        return new ConfigurationFactory();
+        Layout farm_layout = new Layout("tutorial", RemoteFarmWorld.with(farm_tutorial), farm_expert);
+        Layout two_fields = new Layout("two-fields", RemoteFarmWorld.with(FarmWorlds.twoFields()), bam, model, cloning);
+        Layout six_fields = new Layout("six-fields", RemoteFarmWorld.with(FarmWorlds.sixFields()), bam, model, cloning);
+        Domain farm_world = new Domain("farm world", farm_layout, two_fields, six_fields);
+
+        return new ConfigurationFactory(grid_world, farm_world);
     }
 
     public static ConfigurationFactory load(JSONObject config) throws JSONException {

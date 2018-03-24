@@ -53,8 +53,12 @@ public class FarmWorld implements Environment {
 
         @Override
         public int initial(Random random) {
-            int row = random.nextInt(grid.height());
-            int column = random.nextInt(grid.width());
+            int row, column;
+
+            do {
+                row = random.nextInt(grid.height());
+                column = random.nextInt(grid.width());
+            } while(Terrain.DIRT != map[row][column] || Machine.NONE != machines[row][column]);
 
             return (grid.index(row, column) * Machine.values().length) + Machine.NONE.ordinal();
         }

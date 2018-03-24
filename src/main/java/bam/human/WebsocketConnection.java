@@ -151,7 +151,7 @@ public class WebsocketConnection extends AbstractReceiveListener implements Conn
 
             // Fire callback
             if(null != on_close)
-                on_close.accept("reason");
+                on_close.accept(reason);
 
             // Cancel timeout
             if(null != timer)

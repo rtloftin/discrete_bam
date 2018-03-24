@@ -23,6 +23,40 @@ public class GravityWorlds {
     // Constructors for Predefined Gravity Worlds //
     ////////////////////////////////////////////////
 
+    public static GravityWorld tutorial() {
+
+        // Initialize navigation grid
+        NavGrid grid = new NavGrid(10, 10, NavGrid.FOUR);
+
+        // Set cell colors
+        Colors[][] colors = new Colors[grid.height()][grid.width()];
+
+        for(int row = 0; row < grid.height(); ++row)
+            Arrays.fill(colors[row], Colors.CLEAR);
+
+        colors[0][1] = Colors.ORANGE;
+        colors[0][4] = Colors.ORANGE;
+        colors[0][8] = Colors.ORANGE;
+
+        colors[9][1] = Colors.GREEN;
+        colors[9][4] = Colors.GREEN;
+        colors[9][8] = Colors.GREEN;
+
+        // Set gravity mapping
+        Gravity[] gravity = new Gravity[Colors.values().length];
+        gravity[Colors.ORANGE.ordinal()] = Gravity.SOUTH;
+        gravity[Colors.GREEN.ordinal()] = Gravity.NORTH;
+
+        // Build environment
+        GravityWorld environment = new GravityWorld("tutorial", grid, colors, gravity);
+
+        // Define goals
+        environment.addGoal("Left", 4, 0);
+        environment.addGoal("Right", 4, 9);
+
+        return environment;
+    }
+
     public static GravityWorld flip() {
 
         // Initialize navigation grid

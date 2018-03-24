@@ -15,26 +15,24 @@ class FarmRewards implements RewardMapping {
 
     @Override
     public double reward(int state, double[] intent) {
-        int cell = state % grid.numCells();
-        Terrain terrain = map[grid.row(cell)][grid.column(cell)];
+        int cell = state / Machine.values().length;
 
-        if(Terrain.DIRT == terrain)
+        if(Terrain.DIRT == map[grid.row(cell)][grid.column(cell)])
             return 0.0;
 
-        return intent[terrain.ordinal()];
+        return intent[state / Machine.values().length];
     }
 
     @Override
     public void gradient(int state, double[] intent, double weight, double[] gradient) {
-        int cell = state % grid.numCells();
-        Terrain terrain = map[grid.row(cell)][grid.column(cell)];
+        int cell = state / Machine.values().length;
 
-        if(Terrain.DIRT != terrain)
-            gradient[terrain.ordinal()] += weight;
+        if(Terrain.DIRT != map[grid.row(cell)][grid.column(cell)])
+            gradient[state / Machine.values().length] += weight;
     }
 
     @Override
     public int intentSize() {
-        return Terrain.values().length;
+        return grid.numCells();
     }
 }
