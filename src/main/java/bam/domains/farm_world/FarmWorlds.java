@@ -17,7 +17,7 @@ public class FarmWorlds {
     public static FarmWorld tutorial() {
 
         // Initialize navigation grid
-        NavGrid grid = new NavGrid(12, 8, NavGrid.FOUR);
+        NavGrid grid = new NavGrid(12, 11, NavGrid.FOUR);
 
         // Set terrain
         Terrain[][] map = new Terrain[grid.height()][grid.width()];
@@ -43,15 +43,27 @@ public class FarmWorlds {
         map[2][9]  = Terrain.CROPS;
         map[2][10] = Terrain.CROPS;
 
+        // Decoy soil
+        map[5][9] = Terrain.SOIL;
+        map[5][10] = Terrain.SOIL;
+        map[6][9] = Terrain.SOIL;
+        map[6][10] = Terrain.SOIL;
+
+        // Decoy grass
+        map[5][1] = Terrain.GRASS;
+        map[5][2] = Terrain.GRASS;
+        map[6][1] = Terrain.GRASS;
+        map[6][2] = Terrain.GRASS;
+
         // Set machines
         Machine[][] machines = new Machine[grid.height()][grid.width()];
 
         for(int row = 0; row < grid.height(); ++row)
             Arrays.fill(machines[row], Machine.NONE);
 
-        machines[6][1] = Machine.PLOW;
-        machines[6][3] = Machine.SPRINKLER;
-        machines[6][5] = Machine.HARVESTER;
+        machines[9][1] = Machine.PLOW;
+        machines[9][3] = Machine.SPRINKLER;
+        machines[9][5] = Machine.HARVESTER;
 
         FarmWorld environment = new FarmWorld("tutorial", grid, map, machines);
 
@@ -80,7 +92,6 @@ public class FarmWorlds {
         map[2][1] = Terrain.SOIL;
         map[2][2] = Terrain.SOIL;
 
-
         // Crops
         map[1][5]  = Terrain.CROPS;
         map[1][6] = Terrain.CROPS;
@@ -108,7 +119,7 @@ public class FarmWorlds {
     public static FarmWorld sixFields() {
 
         // Initialize navigation grid
-        NavGrid grid = new NavGrid(12, 12, NavGrid.FOUR);
+        NavGrid grid = new NavGrid(12, 11, NavGrid.FOUR);
 
         // Set terrain
         Terrain[][] map = new Terrain[grid.height()][grid.width()];
@@ -135,9 +146,13 @@ public class FarmWorlds {
         map[2][10] = Terrain.CROPS;
 
         // Test fields
-        map[6][1] = Terrain.SOIL;
-        map[8][1] = Terrain.GRASS;
-        map[10][1] = Terrain.CROPS;
+        map[5][1] = Terrain.SOIL;
+        map[7][1] = Terrain.GRASS;
+        map[9][1] = Terrain.CROPS;
+
+        map[5][10] = Terrain.CROPS;
+        map[7][10] = Terrain.GRASS;
+        map[9][10] = Terrain.SOIL;
 
         // Set machines
         Machine[][] machines = new Machine[grid.height()][grid.width()];
@@ -145,9 +160,9 @@ public class FarmWorlds {
         for(int row = 0; row < grid.height(); ++row)
             Arrays.fill(machines[row], Machine.NONE);
 
-        machines[10][4] = Machine.PLOW;
-        machines[10][6] = Machine.SPRINKLER;
-        machines[10][8] = Machine.HARVESTER;
+        machines[9][4] = Machine.PLOW;
+        machines[9][6] = Machine.SPRINKLER;
+        machines[9][8] = Machine.HARVESTER;
 
         FarmWorld environment = new FarmWorld("six-fields", grid, map, machines);
 

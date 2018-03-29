@@ -79,7 +79,7 @@ public class Session {
             try {
                 debug.write("user action");
 
-                remote.takeAction(message.data().getJSONObject("action"));
+                remote.takeAction(message.data());
                 JSONObject response = new JSONObject()
                         .put("state", remote.getState())
                         .put("layout", remote.getLayout());
@@ -90,7 +90,10 @@ public class Session {
 
                 message.capture();
                 message.respond(response);
-            } catch(JSONException e) { debug.write("ERROR: json exception"); }
+            } catch(JSONException e) {
+                debug.write("ERROR: json exception");
+                message.error("json error");
+            }
         }).add("get-action", (Connection.Message message) -> {
             try {
                 debug.write("agent action");
@@ -105,7 +108,10 @@ public class Session {
 
                 message.capture();
                 message.respond(response);
-            } catch(JSONException e) { debug.write("ERROR: json exception"); }
+            } catch(JSONException e) {
+                debug.write("ERROR: json exception");
+                message.error("json error");
+            }
         }).add("task", (Connection.Message message) -> {
             try {
                 debug.write("change task");
@@ -122,7 +128,10 @@ public class Session {
 
                 message.capture();
                 message.respond(response);
-            } catch(JSONException e) { debug.write("ERROR: json exception"); }
+            } catch(JSONException e) {
+                debug.write("ERROR: json exception");
+                message.error("json error");
+            }
         }).add("update", (Connection.Message message) -> {
             try {
                 debug.write("update");
@@ -132,7 +141,10 @@ public class Session {
 
                 message.capture();
                 message.respond(new JSONObject());
-            } catch(JSONException e) { debug.write("ERROR: json exception"); }
+            } catch(JSONException e) {
+                debug.write("ERROR: json exception");
+                message.error("json error");
+            }
         }).add("reset", (Connection.Message message) -> {
             try {
                 debug.write("reset");
@@ -147,7 +159,10 @@ public class Session {
 
                 message.capture();
                 message.respond(response);
-            } catch(JSONException e) { debug.write("ERROR: json exception"); }
+            } catch(JSONException e) {
+                debug.write("ERROR: json exception");
+                message.error("json error");
+            }
         }).add("set-state", (Connection.Message message) -> {
             try {
                 debug.write("set state");
@@ -163,7 +178,10 @@ public class Session {
 
                 message.capture();
                 message.respond(response);
-            } catch(JSONException e) { debug.write("ERROR: json exception"); }
+            } catch(JSONException e) {
+                debug.write("ERROR: json exception");
+                message.error("json error");
+            }
         });
 
         debug.write("session started");

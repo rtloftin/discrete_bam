@@ -149,7 +149,8 @@ public class RemoteGridWorld implements Remote {
         }
 
         // Show action to agent
-        agent.observe(TeacherAction.of(current_state, action_index));
+        if(action.optBoolean("on-task", true))
+            agent.observe(TeacherAction.of(current_state, action_index));
 
         // Compute next state
         int next_state = environment.dynamics()
@@ -211,7 +212,8 @@ public class RemoteGridWorld implements Remote {
         // Write task
         JSONObject task = new JSONObject()
                 .put("x", current_task.column())
-                .put("y", current_task.row());
+                .put("y", current_task.row())
+                .put("name", current_task.name());
 
         return new JSONObject()
                 .put("width", environment.width())

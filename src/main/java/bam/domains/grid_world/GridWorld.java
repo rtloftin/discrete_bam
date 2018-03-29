@@ -3,7 +3,6 @@ package bam.domains.grid_world;
 import bam.algorithms.Dynamics;
 import bam.domains.Environment;
 import bam.algorithms.Representation;
-import bam.domains.Task;
 import bam.domains.NavGrid;
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -30,10 +29,20 @@ public class GridWorld implements Environment {
         private final String name;
         private final double[] rewards;
 
+        private int min_start_row, max_start_row;
+        private int min_start_column, max_start_column;
+
         private Task(String name, int row, int column) {
             this.name = name;
             this.row = row;
             this.column = column;
+
+            // Initialize bounding box
+            min_start_row = 0;
+            max_start_row = grid.height();
+
+            min_start_column = 0;
+            max_start_column = grid.width();
 
             // Initialize reward function
             rewards = new double[grid.numCells()];
@@ -44,7 +53,23 @@ public class GridWorld implements Environment {
         }
 
         private Task(JSONObject config) throws JSONException {
-            this(config.getString("name"), config.getInt("row"), config.getInt("columns"));
+            this(config.getString("name"), config.getInt("row"), config.getInt("column"));
+
+            if(config.has("start")) {
+                JSONObject start = config.getJSONObject("start");
+
+                min_start_row = start.getInt("min-row");
+                max_start_row = start.getInt("max-row");
+                min_start_column = start.getInt("min-column");
+                max_start_column = start.getInt("max-column");
+            }
+        }
+
+        public void start(int min_start_row, int max_start_row, int min_start_column, int max_start_column) {
+            this.min_start_row = min_start_row;
+            this.max_start_row = max_start_row;
+            this.min_start_column = min_start_column;
+            this.max_start_column = max_start_column;
         }
 
         public int row() {
@@ -55,13 +80,14 @@ public class GridWorld implements Environment {
             return column;
         }
 
+
         @Override
         public int initial(Random random) {
             int row, col;
 
             do {
-                row = random.nextInt(grid.height());
-                col = random.nextInt(grid.width());
+                row = min_start_row + random.nextInt(max_start_row - min_start_row);
+                col = min_start_column + random.nextInt(max_start_column - min_start_column);
             } while(map[row][col]);
 
             return grid.index(row, col);
@@ -82,7 +108,12 @@ public class GridWorld implements Environment {
             return new JSONObject()
                     .put("name", name())
                     .put("row", row)
-                    .put("column", column);
+                    .put("column", column)
+                    .put("start", new JSONObject()
+                            .put("min-row", min_start_row)
+                            .put("max-row", max_start_row)
+                            .put("min-column", min_start_column)
+                            .put("max-column", max_start_column));
         }
     }
 
@@ -92,7 +123,7 @@ public class GridWorld implements Environment {
     private final NavGrid grid;
     private final int depth;
 
-    private final List<Task> tasks;
+    private final LinkedList<Task> tasks;
 
     private final GridDynamics dynamics;
     private final GridRepresentation representation;
@@ -110,7 +141,7 @@ public class GridWorld implements Environment {
         representation = new GridRepresentation(grid, depth);
     }
 
-    private void addGoal(JSONObject config) throws JSONException {  tasks.add(this.new Task(config)); }
+    private void addGoal(JSONObject config) throws JSONException { tasks.add(this.new Task(config)); }
 
     /**
      * Adds a new task with a goal at the given row and column.
@@ -119,7 +150,11 @@ public class GridWorld implements Environment {
      * @param row the row of the goal
      * @param column the column of the goal
      */
-    public void addGoal(String name, int row, int column) { tasks.add(this.new Task(name, row, column)); }
+    public Task addGoal(String name, int row, int column) {
+        tasks.add(this.new Task(name, row, column));
+
+        return tasks.getLast();
+    }
 
     public int width() {
         return grid.width();

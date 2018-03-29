@@ -206,7 +206,7 @@ public class WebsocketConnection extends AbstractReceiveListener implements Conn
     }
 
     @Override
-    protected void onFullTextMessage(WebSocketChannel channel, BufferedTextMessage message) {
+    protected synchronized void onFullTextMessage(WebSocketChannel channel, BufferedTextMessage message) {
         try {
             JSONObject json = new JSONObject( message.getData());
 

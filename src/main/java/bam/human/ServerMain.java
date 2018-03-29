@@ -6,6 +6,7 @@ import io.undertow.websockets.core.*;
 import io.undertow.websockets.spi.WebSocketHttpExchange;
 
 import java.io.IOException;
+import java.net.InetAddress;
 
 public class ServerMain {
 
@@ -25,7 +26,7 @@ public class ServerMain {
         Undertow server = Undertow.builder()
                 .addHttpListener(8765, "localhost")
                 .setHandler(Handlers.path()
-                        .addPrefixPath("/studies/bam", Handlers
+                        .addPrefixPath("/", Handlers
                                 .websocket((WebSocketHttpExchange exchange, WebSocketChannel channel) -> {
                                     users.add(WebsocketConnection.with(channel, 5000000L));
                                 })))
@@ -42,9 +43,9 @@ public class ServerMain {
                 .build();
 
         Undertow server = Undertow.builder()
-                .addHttpListener(8080, "localhost")
+                .addHttpListener(8765, "localhost")
                 .setHandler(Handlers.path()
-                        .addPrefixPath("/studies/bam", Handlers
+                        .addPrefixPath("/", Handlers
                                 .websocket((WebSocketHttpExchange exchange, WebSocketChannel channel) -> {
                                     users.add(WebsocketConnection.with(channel, 5000000L));
                                 })))

@@ -152,7 +152,8 @@ public class RemoteGravityWorld implements Remote {
         }
 
         // Show action to agent
-        agent.observe(TeacherAction.of(current_state, action_index));
+        if(action.optBoolean("on-task", true))
+            agent.observe(TeacherAction.of(current_state, action_index));
 
         // Compute next state
         int next_state = environment.dynamics()
@@ -212,9 +213,10 @@ public class RemoteGravityWorld implements Remote {
     public JSONObject getLayout() throws JSONException {
 
         // Write task
-        JSONObject task = new JSONObject();
-        task.put("x", current_task.column());
-        task.put("y", current_task.row());
+        JSONObject task = new JSONObject()
+                .put("x", current_task.column())
+                .put("y", current_task.row())
+                .put("name", current_task.name());
 
         // Write gravity
         JSONObject gravity = new JSONObject();

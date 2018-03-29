@@ -88,9 +88,9 @@ public class GridWorlds {
         GridWorld environment = new GridWorld("two-rooms", grid, map);
 
         // Initialize tasks
-        environment.addGoal("Left",0, 14);
-        environment.addGoal("Right", 0, 0);
-        environment.addGoal("Inside",2, 5);
+        environment.addGoal("Right",0, 14).start(0, 8, 0,3);
+        environment.addGoal("Left", 0, 0).start(0, 8, 12, 15);
+        environment.addGoal("Inside",2, 5).start(0, 8, 0,3);
 
         return environment;
     }
@@ -98,7 +98,7 @@ public class GridWorlds {
     public static GridWorld doors() {
 
         // Initialize grid
-        NavGrid grid = new NavGrid(13, 13, NavGrid.FOUR);
+        NavGrid grid = new NavGrid(11, 11, NavGrid.FOUR);
 
         // Initialize map
         boolean[][] map = new boolean[grid.height()][grid.width()];
@@ -107,34 +107,24 @@ public class GridWorlds {
             for(int j=0; j < map[i].length; ++j)
                 map[i][j] = false;
 
-        for(int i=0; i < 13; ++i) {
-            map[0][i] = true;
-            map[12][i] = true;
-        }
-
-        for(int i=1; i < 12; ++i) {
-            map[i][0] = true;
-            map[i][12] = true;
-        }
-
         for(int i=0; i < 5; ++i) {
-            map[8][1 + i] = true;
-            map[8][7 + i] = true;
+            map[7][i] = true;
+            map[7][6 + i] = true;
         }
 
         for(int i=0; i < 3; ++i) {
-            map[4][1 + i] = true;
-            map[4][9 + i] = true;
+            map[3][i] = true;
+            map[3][8 + i] = true;
         }
 
         // Create environment
         GridWorld environment = new GridWorld("doors", grid, map);
 
         // Initialize tasks
-        environment.addGoal("Top Right", 2, 10);
-        environment.addGoal("Top Left",2, 2);
-        environment.addGoal("Center Right", 6, 10);
-        environment.addGoal("Center Left",6, 2);
+        environment.addGoal("Top Right", 1, 9).start(8, 11, 0, 11);
+        environment.addGoal("Top Left",1, 1).start(8, 11, 0, 11);
+        environment.addGoal("Center Right", 5, 9).start(8, 11, 0, 11);
+        environment.addGoal("Center Left",5, 1).start(8, 11, 0, 11);
 
         return environment;
     }

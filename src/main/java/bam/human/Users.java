@@ -1,8 +1,5 @@
 package bam.human;
 
-import netscape.javascript.JSObject;
-import org.json.JSONObject;
-
 import java.util.LinkedList;
 import java.util.List;
 

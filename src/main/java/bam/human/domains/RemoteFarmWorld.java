@@ -122,7 +122,8 @@ public class RemoteFarmWorld implements Remote {
         }
 
         // Show action to agent
-        agent.observe(TeacherAction.of(current_state, action_index));
+        if(action.optBoolean("on-task", true))
+            agent.observe(TeacherAction.of(current_state, action_index));
 
         // Compute next state
         int next_state = environment.dynamics()
@@ -171,11 +172,12 @@ public class RemoteFarmWorld implements Remote {
     public JSONObject getLayout() throws JSONException {
 
         // Write task
-        JSONObject task = new JSONObject();
-        task.put("x", current_task.column());
-        task.put("y", current_task.row());
-        task.put("width", current_task.width());
-        task.put("height", current_task.height());
+        JSONObject task = new JSONObject()
+                .put("x", current_task.column())
+                .put("y", current_task.row())
+                .put("width", current_task.width())
+                .put("height", current_task.height())
+                .put("name", current_task.name());
 
         // Return layout representation
         return new JSONObject()
