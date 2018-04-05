@@ -49,6 +49,15 @@ public class Behavior {
         return policies.get(task);
     }
 
+    public Policy policy(String task) {
+        double[][] policy = policies.get(task);
+
+        if(null == policy)
+            return null;
+
+        return (int state) -> policy[state];
+    }
+
     public JSONObject serialize() throws JSONException {
         JSONArray tasks = new JSONArray();
 

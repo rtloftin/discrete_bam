@@ -5,7 +5,7 @@ import bam.algorithms.Algorithm;
 import bam.algorithms.BAM;
 import bam.algorithms.Cloning;
 import bam.algorithms.ModelBased;
-import bam.algorithms.action.NormalizedActionModel;
+import bam.algorithms.action.OldNormalizedActionModel;
 import bam.algorithms.optimization.Momentum;
 import bam.algorithms.planning.BoltzmannPlanner;
 import bam.algorithms.variational.PointDensity;
@@ -138,7 +138,7 @@ public class ConfigurationFactory implements Session.Factory {
                         .optimization(Momentum.with(0.01, 0.5)).build())
                 .dynamicsOptimization(Momentum.with(0.01, 0.5))
                 .planningAlgorithm(BoltzmannPlanner.algorithm( 1.0))
-                .actionModel(NormalizedActionModel.beta(1.0))
+                .actionModel(OldNormalizedActionModel.beta(1.0))
                 .taskUpdates(20)
                 .dynamicsUpdates(20)
                 .emUpdates(10)
@@ -177,7 +177,7 @@ public class ConfigurationFactory implements Session.Factory {
                         .optimization(Momentum.with(0.01, 0.5)).build())
                 .dynamicsOptimization(Momentum.with(0.01, 0.5))
                 .planningAlgorithm(BoltzmannPlanner.algorithm( 1.0))
-                .actionModel(NormalizedActionModel.beta(1.0))
+                .actionModel(OldNormalizedActionModel.beta(1.0))
                 .taskUpdates(20)
                 .dynamicsUpdates(20)
                 .emUpdates(10)
@@ -189,7 +189,7 @@ public class ConfigurationFactory implements Session.Factory {
                         .optimization(Momentum.with(0.01, 0.5)).build())
                 .dynamicsOptimization(Momentum.with(0.01, 0.5))
                 .planningAlgorithm(BoltzmannPlanner.algorithm(1.0))
-                .actionModel(NormalizedActionModel.beta(1.0))
+                .actionModel(OldNormalizedActionModel.beta(1.0))
                 .taskUpdates(200)
                 .dynamicsUpdates(200)
                 .build();
@@ -197,7 +197,7 @@ public class ConfigurationFactory implements Session.Factory {
         Algorithm cloning = Cloning.builder()
                 .taskSource(PointDensity.builder()
                         .optimization(Momentum.with(0.01, 0.5)).build())
-                .actionModel(NormalizedActionModel.beta(1.0))
+                .actionModel(OldNormalizedActionModel.beta(1.0))
                 .numUpdates(200)
                 .build();
 

@@ -5,7 +5,7 @@ import bam.algorithms.BAM;
 import bam.algorithms.Cloning;
 import bam.algorithms.ModelBased;
 import bam.algorithms.action.ActionModel;
-import bam.algorithms.action.NormalizedActionModel;
+import bam.algorithms.action.OldNormalizedActionModel;
 import bam.algorithms.optimization.Momentum;
 import bam.algorithms.planning.BoltzmannPlanner;
 import bam.algorithms.variational.PointDensity;
@@ -60,7 +60,7 @@ public class DevelopmentMain {
         Environment flip = GravityWorlds.flip();
 
         // Action Model
-        ActionModel action_model = NormalizedActionModel.beta(1.0);
+        ActionModel action_model = OldNormalizedActionModel.beta(1.0);
 
         // Task source
         Variational task_source = PointDensity.builder()
@@ -107,7 +107,7 @@ public class DevelopmentMain {
         Environment large_flip = GravityWorlds.large_flip();
 
         // Action Model
-        ActionModel action_model = NormalizedActionModel.beta(1.0);
+        ActionModel action_model = OldNormalizedActionModel.beta(1.0);
 
         // Task source
         Variational task_source = PointDensity.builder()

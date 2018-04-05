@@ -18,7 +18,7 @@ public class ServerMain {
     // The real server code will go here
     private static void experimentServer() throws IOException {
         Users users = Users.builder()
-                .maxUsers(3)
+                .maxUsers(16)
                 .dataRoot(Directory.local(System.getProperty("user.home")))
                 .sessions(ConfigurationFactory.experiment())
                 .build();

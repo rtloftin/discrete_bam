@@ -103,8 +103,8 @@ public interface ActionModel {
             return GreedyActionModel.load(config);
         else if(className.equals(BoltzmannActionModel.class.getSimpleName()))
             return BoltzmannActionModel.load(config);
-        else if(className.equals(NormalizedActionModel.class.getSimpleName()))
-            return NormalizedActionModel.load(config);
+        else if(className.equals(OldNormalizedActionModel.class.getSimpleName()))
+            return OldNormalizedActionModel.load(config);
 
         throw new RuntimeException("Unknown Implementation of 'ActionModel' requested");
     }

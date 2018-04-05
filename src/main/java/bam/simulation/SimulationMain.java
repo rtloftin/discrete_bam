@@ -11,7 +11,7 @@ import bam.domains.gravity_world.GravityWorlds;
 import bam.algorithms.*;
 import bam.algorithms.optimization.Momentum;
 import bam.domains.grid_world.GridWorlds;
-import bam.algorithms.action.NormalizedActionModel;
+import bam.algorithms.action.OldNormalizedActionModel;
 import bam.algorithms.variational.PointDensity;
 
 import java.io.File;
@@ -70,7 +70,7 @@ public class SimulationMain {
         Environment two_rooms = GridWorlds.twoRooms(NavGrid.FOUR);
 
         // Action Model
-        ActionModel action_model = NormalizedActionModel.beta(1.0);
+        ActionModel action_model = OldNormalizedActionModel.beta(1.0);
 
         // Task source
         Variational task_source = PointDensity.builder()
@@ -151,7 +151,7 @@ public class SimulationMain {
         Environment choices = GravityWorlds.choices();
 
         // Action Model
-        ActionModel action_model = NormalizedActionModel.beta(1.0);
+        ActionModel action_model = OldNormalizedActionModel.beta(1.0);
 
         // Task source
         Variational task_source = PointDensity.builder()
