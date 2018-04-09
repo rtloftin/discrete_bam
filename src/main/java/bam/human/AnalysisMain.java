@@ -22,7 +22,7 @@ public class AnalysisMain {
     public static void main(String[] args) throws IOException, JSONException {
 
         // Load data
-        Path root = Paths.get("C:\\Users\\Tyler\\Desktop\\users_4_4");
+        Path root = Paths.get("C:\\Users\\Tyler\\Desktop\\users_4_9");
         DataSet data = DataSet.load(root);
 
         // Print number of users

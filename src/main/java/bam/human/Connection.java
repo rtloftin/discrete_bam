@@ -1,6 +1,5 @@
 package bam.human;
 
-import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.function.Consumer;
@@ -19,7 +18,11 @@ public interface Connection {
 
     /**
      * Represents a single message received
-     * by this connection.
+     * by this connection.  This message is
+     * passed to each of the message handlers
+     * for the given message type.  The response
+     * or error message that is provided first
+     * is the one that gets sent to the client.
      */
     interface Message {
 
@@ -31,15 +34,8 @@ public interface Connection {
         JSONObject data();
 
         /**
-         * Captures the message so that no subsequent
-         * message handlers are called for it.
-         */
-        void capture();
-
-        /**
-         * Responds to the message.  Does nothing
-         * if a previous handler has already
-         * provided a response.
+         * Responds to the message.  Does nothing if
+         * a response has already been provided.
          *
          * @param response the data for the message response
          */
@@ -55,7 +51,9 @@ public interface Connection {
         }
 
         /**
-         * Indicates that there was an error handing this message.
+         * Indicates that there was an error handing this
+         * message. Does nothing if a response has already
+         * been provided.
          *
          * @param error the specific error message
          */
@@ -91,35 +89,28 @@ public interface Connection {
      * side should fail.  Does nothing if the connection
      * is already open or has been closed, refused or declined.
      *
-     * Accepts a callback which is called when the connection is closed
-     * for any reason.  The callback accepts a message indicating why
-     * the connection was closed.
+     * Accepts a callback which is called when the connection is closed externally.
+     * The callback accepts a string indicating why the connection was closed.
      *
-     * @param on_close the callback for when the connection is closed
+     * @param on_close the callback for when the connection fails or is closed by the client
      */
     void open(Consumer<String> on_close);
 
     /**
-     * Indicates that the server encountered an unrecoverable
-     * error when trying to connect the user.  Does nothing
-     * if the connection has already been opened.
+     * Explicitly refuses to open the connection, providing
+     * an error message to return to the client, then closing
+     * the connection itself.
+     *
+     * @param reason the reason the connection is being refused
      */
-    void decline();
+    void refuse(String reason);
 
     /**
-     * Explicitly refuses the connection, indicating that
-     * this end of the connection is busy, or otherwise
-     * unwilling to process the request.  Does nothing
-     * if the connection has already been opened.
+     * Permanently closes the connection, without calling
+     * the on_close callback provided when the connection
+     * was opened.  Does nothing if the connection is closed.
      */
-    void refuse();
-
-    /**
-     * Permanently closes the connection on both ends.  Does
-     * nothing if the connection is already closed, or has
-     * not been opened.
-     */
-    void close(String reason);
+    void close();
 
     /**
      * Creates a new listener object attached to this
@@ -128,15 +119,4 @@ public interface Connection {
      * @return a new Listener object for this connection
      */
     Listener listen();
-
-    /**
-     * Sends a message, with a callback
-     * provided for a possible response.
-     *
-     * @param type the type of the message
-     * @param data the message data
-     * @param callback the callback to handle the response to this message
-     * @throws JSONException if the message data is not properly formatted
-     */
-    void send(String type, JSONObject data, Consumer<JSONObject> callback) throws JSONException;
 }

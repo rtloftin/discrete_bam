@@ -10,14 +10,15 @@ import java.util.function.Consumer;
 
 public class WebsocketConnection extends AbstractReceiveListener implements Connection {
 
-    private class Message implements Connection.Message {
+    private static class Message implements Connection.Message {
 
-        private String type;
-        private int id;
-        private JSONObject data;
+        private final String type;
+        private final int id;
+        private final JSONObject data;
 
-        private boolean is_captured = false;
-        private boolean has_responded = false;
+        private JSONObject response = null;
+        private String error = null;
+
 
         private Message(JSONObject message) throws JSONException {
             type = message.getString("type");
@@ -26,31 +27,20 @@ public class WebsocketConnection extends AbstractReceiveListener implements Conn
         }
 
         @Override
-        public JSONObject data() { return data; }
-
-        @Override
-        public void capture() { is_captured = true; }
+        public JSONObject data() {
+            return data;
+        }
 
         @Override
         public void respond(JSONObject response) {
-            if(!has_responded) {
-                try {
-                    JSONObject message = new JSONObject()
-                            .put("response", id)
-                            .put("data", response);
-
-                    WebSockets.sendText(message.toString(2), channel, null);
-
-                    has_responded = true;
-                } catch(JSONException e) {
-                    error("connection error");
-                }
-            }
+            if(null == this.response)
+                this.response = response;
         }
 
         @Override
         public void error(String error) {
-            close(error);
+            if(null != this.error)
+                this.error = error;
         }
     }
 
@@ -62,14 +52,8 @@ public class WebsocketConnection extends AbstractReceiveListener implements Conn
     // The current connection status
     private int status = PENDING;
 
-    // The current message index
-    private int index = 0;
-
     // The message handlers
     private Map<String, List<Consumer<Connection.Message>>> handlers = new HashMap<>();
-
-    // The response callbacks
-    private Map<Integer, Consumer<JSONObject>> callbacks = new HashMap<>();
 
     // The connection close callback
     private Consumer<String> on_close = null;
@@ -97,70 +81,62 @@ public class WebsocketConnection extends AbstractReceiveListener implements Conn
             // Set close callback
             this.on_close = on_close;
 
-            // Set timeout
-            timer = new Timer();
-            timer.schedule(new TimerTask() {
-                @Override
-                public void run() {
-                    close("timeout");
-                }
-            }, timeout);
-
-            // Open channel
-            channel.getReceiveSetter().set(this);
-            channel.resumeReceives();
-
             // Respond ready
-            WebSockets.sendText("ready", channel, null);
-
-            // Update status
-            status = OPEN;
-        }
-    }
-
-    @Override
-    public void decline() {
-        if(PENDING == status) {
-
-            // Respond that there was an error
-            WebSockets.sendText("error", channel, null);
-
-            // Update status
-            status = CLOSED;
-        }
-    }
-
-    @Override
-    public void refuse() {
-        if(PENDING == status) {
-
-            // Respond busy
-            WebSockets.sendText("busy", channel, null);
-
-            // Update status
-            status = CLOSED;
-        }
-    }
-
-    @Override
-    public void close(String reason) {
-        if(CLOSED != status){
-
-            // Update status
-            status = CLOSED;
-
-            // Fire callback
-            if(null != on_close)
-                on_close.accept(reason);
-
-            // Cancel timeout
-            if(null != timer)
-                timer.cancel();
-
-            // Try to close the connection - may already be closed
             try {
-                channel.close();
-            } catch(IOException e) { /* Tried to close, nothing to be done */}
+
+                // Open channel
+                channel.getReceiveSetter().set(this);
+                channel.resumeReceives();
+
+                // Set status to open
+                status = OPEN;
+
+                // Set timeout
+                timer = new Timer();
+                timer.schedule(new TimerTask() {
+                    @Override
+                    public void run() {
+                        if(null != on_close)
+                            on_close.accept("timeout");
+
+                        close();
+                    }
+                }, timeout);
+
+                // Respond ready
+                WebSockets.sendText(new JSONObject()
+                        .put("ready", "true").toString(4), channel, null);
+            } catch(JSONException e) {
+                close();
+            }
+        }
+    }
+
+    @Override
+    public void refuse(String reason) {
+        if(PENDING == status) {
+
+            // Try to send a response
+            try {
+                WebSockets.sendText(new JSONObject()
+                        .put("error", reason).toString(4), channel, null);
+            } catch(JSONException e) { /* We tried, nothing left to do */ }
+
+            close();
+        }
+    }
+
+    @Override
+    public void close() {
+        if(CLOSED != status) {
+            status = CLOSED;
+            timer.cancel();
+
+            if(channel.isOpen()) {
+                try {
+                    channel.close();
+                } catch (IOException e) { /* We tried, move on */ }
+            }
         }
     }
 
@@ -191,47 +167,44 @@ public class WebsocketConnection extends AbstractReceiveListener implements Conn
     }
 
     @Override
-    public void send(String type, JSONObject data, Consumer<JSONObject> callback) throws JSONException {
-        if(OPEN == status) {
-            if (null != callback)
-                throw new UnsupportedOperationException(); // callbacks.put(index, callback);
-
-            JSONObject message = new JSONObject()
-                    .put("type", type)
-                    .put("id", index++)
-                    .put("data", data);
-
-            WebSockets.sendText(message.toString(2), channel, null);
-        }
-    }
-
-    @Override
     protected synchronized void onFullTextMessage(WebSocketChannel channel, BufferedTextMessage message) {
         try {
-            JSONObject json = new JSONObject( message.getData());
+            Message msg = new Message(new JSONObject(message.getData()));
 
-            if(json.has("response")) {
-                int id = json.getInt("response");
+            if(handlers.containsKey(msg.type))
+                for(Consumer<Connection.Message> handler : handlers.get(msg.type))
+                    handler.accept(msg);
 
-                if(callbacks.containsKey(id)) {
-                    callbacks.get(id).accept(json.getJSONObject("data"));
-                    callbacks.remove(id);
-                }
-            } else {
-                Message msg = this.new Message(json);
+            JSONObject response = new JSONObject().put("callback", msg.id);
 
-                if(handlers.containsKey(msg.type))
-                    for(Consumer<Connection.Message> handler : handlers.get(msg.type))
-                        if(!msg.is_captured)
-                            handler.accept(msg);
-            }
-        } catch(JSONException e) {
-            close("connection error");
-        }
+            if(null != msg.response)
+                response.put("data", msg.response);
+            else if(null != msg.error)
+                response.put("error", msg.error);
+            else
+                response.put("data", new JSONObject());
+
+            WebSockets.sendText(response.toString(4), channel, null);
+        } catch(JSONException e) { /* We tried, nothing to be done */ }
     }
 
     @Override
-    protected void onClose(WebSocketChannel webSocketChannel, StreamSourceFrameChannel channel) {
-        close("connection error");
+    protected synchronized  void onClose(WebSocketChannel webSocketChannel, StreamSourceFrameChannel channel) {
+
+        // Call close handler
+        on_close.accept("connection closed");
+
+        // Close connection
+        close();
+    }
+
+    @Override
+    protected synchronized void onError(WebSocketChannel channel, Throwable error) {
+
+        // Call close handler
+        on_close.accept("connection error: " + error.getMessage());
+
+        // Close connection
+        close();
     }
 }

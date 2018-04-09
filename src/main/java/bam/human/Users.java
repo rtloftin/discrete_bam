@@ -1,5 +1,8 @@
 package bam.human;
 
+import org.json.JSONException;
+
+import java.io.IOException;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -36,7 +39,6 @@ class Users {
                 log.write("CLIENT: " + message.data().optString("text", "no log message"));
             }).add("error", (Connection.Message message) -> {
                 log.write("ERROR-CLIENT: " + message.data().optString("text", "no error message"));
-                message.error("client error");
             }).add("start-session", (Connection.Message message) -> {
                 if(null != current_session) {
                     log.write("ERROR: previous session not closed");
@@ -47,7 +49,7 @@ class Users {
                         message.respond(current_session.start());
 
                         log.write("SESSION: started new session");
-                    } catch (Exception e) {
+                    } catch(Exception e) {
                         log.write("ERROR: could not start new session - " + e.getMessage());
                         message.error("server error");
                     }
@@ -62,7 +64,7 @@ class Users {
                     log.write("SESSION: user ended session");
                 }
             }).add("complete", (Connection.Message message) -> {
-                connection.close("complete");
+                log.write("COMPLETE");
             });
 
             connection.open((String reason) -> {
@@ -76,7 +78,6 @@ class Users {
             });
         }
     }
-
 
     /**
      * A builder class used to configure user
@@ -138,13 +139,13 @@ class Users {
 
         // Check if we have too many users already
         if(users.size() >= max_users)
-            connection.refuse();
+            connection.refuse("busy");
 
         // Try to create the user
         try {
             users.add(this.new User(connection, directory.unique("users")));
         } catch(Exception e) {
-            connection.decline();
+            connection.refuse(e.getMessage());
         }
     }
 }

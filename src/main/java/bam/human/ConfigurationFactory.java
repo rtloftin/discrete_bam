@@ -23,6 +23,7 @@ import bam.human.domains.RemoteGridWorld;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -233,11 +234,18 @@ public class ConfigurationFactory implements Session.Factory {
     }
 
     @Override
-    public Session build(Connection connection, Directory directory, JSONObject config) throws Exception {
+    public Session build(Connection connection, Directory directory, JSONObject config) throws IOException, JSONException {
 
         // Parse session configuration
         JSONObject condition = config.getJSONObject("condition");
-        JSONObject initial = config.getJSONObject("initial");
+        JSONObject client = config.optJSONObject("client");
+        JSONObject initial = config.optJSONObject("initial");
+
+        if(null == client)
+            client = new JSONObject();
+
+        if(null == initial)
+            initial = new JSONObject();
 
         // Get environment and algorithm
         Layout layout = domains.get(condition.getString("domain"))
@@ -245,8 +253,9 @@ public class ConfigurationFactory implements Session.Factory {
         Algorithm algorithm = layout.algorithms.get(condition.getString("algorithm"));
 
         // Save session configuration
-        directory.save("environment", layout.factory.serialize().toString(4));
+        directory.save("client", client.toString(4));
         directory.save("algorithm", algorithm.serialize().toString(4));
+        directory.save("environment", layout.factory.serialize().toString(4));
 
         // Construct remote simulation
         Remote remote = layout.factory.build(algorithm, initial);

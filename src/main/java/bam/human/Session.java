@@ -25,7 +25,7 @@ public class Session {
          * @return the new session object
          * @throws JSONException if the initial message is not properly formatted
          */
-        Session build(Connection connection, Directory directory, JSONObject config) throws Exception;
+        Session build(Connection connection, Directory directory, JSONObject config) throws IOException, JSONException;
     }
 
     // The remote simulation associated with this session
@@ -88,7 +88,6 @@ public class Session {
                         .put("data", message.data())
                         .put("state", response.getJSONObject("state"));
 
-                message.capture();
                 message.respond(response);
             } catch(JSONException e) {
                 debug.write("ERROR: json exception");
@@ -106,7 +105,6 @@ public class Session {
                 record("get-action")
                         .put("state", response.getJSONObject("state"));
 
-                message.capture();
                 message.respond(response);
             } catch(JSONException e) {
                 debug.write("ERROR: json exception");
@@ -126,7 +124,6 @@ public class Session {
                         .put("state", response.getJSONObject("state"))
                         .put("layout", response.getJSONObject("layout"));
 
-                message.capture();
                 message.respond(response);
             } catch(JSONException e) {
                 debug.write("ERROR: json exception");
@@ -139,7 +136,6 @@ public class Session {
                 record("integrate")
                         .put("behavior", remote.integrate());
 
-                message.capture();
                 message.respond(new JSONObject());
             } catch(JSONException e) {
                 debug.write("ERROR: json exception");
@@ -157,7 +153,6 @@ public class Session {
                 record("reset")
                         .put("state", response.getJSONObject("state"));
 
-                message.capture();
                 message.respond(response);
             } catch(JSONException e) {
                 debug.write("ERROR: json exception");
@@ -176,7 +171,6 @@ public class Session {
                         .put("data", message.data())
                         .put("state", response.getJSONObject("state"));
 
-                message.capture();
                 message.respond(response);
             } catch(JSONException e) {
                 debug.write("ERROR: json exception");
@@ -213,9 +207,9 @@ public class Session {
         listener.remove();
 
         try {
-            // Do final data integration
-            record("integrate")
-                    .put("behavior", remote.integrate());
+
+            // Do final data integration -- we do this already on the client side
+            /* record("integrate").put("behavior", remote.integrate()); */
 
             // Record end event
             record("end")

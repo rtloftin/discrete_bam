@@ -29,6 +29,7 @@ public class Sequences<T> {
 
     public static <T> Sequences<T> of(Sessions sessions, Evaluation<T> evaluation) {
         List<Sequence<T>> sequences = new ArrayList<>();
+        double mean_tasks = 0.0;
 
         for(SessionRecord session : sessions.records()) {
             Sequence<T> sequence = Sequence.start();
@@ -42,7 +43,11 @@ public class Sequences<T> {
             }
 
             sequences.add(sequence);
+
+            mean_tasks += sequence.tasks.size();
         }
+
+        System.out.println("Sequences, mean tasks trained: " + (mean_tasks / sequences.size()));
 
         return new Sequences<>(sequences);
     }
