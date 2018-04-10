@@ -42,7 +42,8 @@ public class DevelopmentMain {
         Util.setPreference("root", root.get().getPath());
 
         // cloningTest(root.get());
-        bamTest(root.get());
+        // bamTest(root.get());
+        goalTest(root.get());
     }
 
     private static void cloningTest(File root) throws Exception {
@@ -163,6 +164,67 @@ public class DevelopmentMain {
                 .numSessions(10)
                 .maxDemonstrations(10)
                 .evaluationEpisodes(50)
+                .build();
+
+        // Run experiment
+        experiment.run(folder);
+    }
+
+    private static void goalTest(File root) throws Exception {
+        File folder = Util.stampedFolder("goal_test", root);
+
+        Environment two_rooms = GridWorlds.twoRooms();
+        Environment doors = GridWorlds.doors();
+
+        // Action Model
+        ActionModel action_model = OldNormalizedActionModel.beta(1.0);
+
+        // Task source
+        Variational task_source = PointDensity.builder()
+                .optimization(Momentum.with(0.01, 0.5))
+                // .optimization(Adam.with(0.01, 0.8, 0.8, 0.05))
+                .build();
+
+        /* Variational task_source = GaussianDensity.builder()
+                .optimization(AdaGrad.with(0.001, 0.7)).priorDeviation(1.0).numSamples(5).build(); */
+
+        // Initialize BAM algorithms
+        Algorithm bam = BAM.builder()
+                .taskSource(task_source)
+                .dynamicsOptimization(Momentum.with(0.1, 0.5))
+                // .dynamicsOptimization(Momentum.with(0.01, 0.5))
+                // .dynamicsOptimization(AdaGrad.with(1.0, 0.7))
+                // .dynamicsOptimization(Adam.with(0.01, 0.8, 0.8, 0.05))
+                .planningAlgorithm(BoltzmannPlanner.algorithm( 1.0))
+                .actionModel(action_model)
+                .taskUpdates(20)
+                .dynamicsUpdates(20)
+                .emUpdates(40)
+                .useTransitions(true)
+                .build();
+
+        // Initialize model-based algorithms
+        Algorithm model = ModelBased.builder()
+                .taskSource(task_source)
+                .dynamicsOptimization(Momentum.with(0.01, 0.5))
+                // .dynamicsOptimization(AdaGrad.with(1.0, 0.7))
+                // .dynamicsOptimization(Adam.with(0.01, 0.8, 0.8, 0.05))
+                .planningAlgorithm(BoltzmannPlanner.algorithm(1.0))
+                .actionModel(action_model)
+                .taskUpdates(400)
+                .dynamicsUpdates(400)
+                .build();
+
+        // Initialize experiment
+        MultiTaskGoalExperiment experiment = MultiTaskGoalExperiment.builder()
+                .environments(two_rooms, doors)
+                // .algorithms(bam)
+                .algorithms(model)
+                .numSessions(10)
+                .maxDemonstrations(10)
+                .evaluationEpisodes(50)
+                //.finalNoop(false)
+                .finalNoop(true)
                 .build();
 
         // Run experiment
