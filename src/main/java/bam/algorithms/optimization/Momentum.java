@@ -34,7 +34,7 @@ public class Momentum implements Optimization {
         Arrays.fill(delta, 0.0);
 
         return (double[] parameters, double[] gradient) -> {
-                for (int i = 0; i < parameters.length; ++i) {
+                for (int i = 0; i < num_parameters; ++i) {
                     delta[i] = (momentum * delta[i]) + (learning_rate * gradient[i]);
                     parameters[i] += delta[i];
                 }

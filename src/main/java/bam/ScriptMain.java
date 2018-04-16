@@ -4,9 +4,15 @@ import jdk.jshell.JShell;
 import jdk.jshell.JShellException;
 import jdk.jshell.SnippetEvent;
 import jdk.jshell.SourceCodeAnalysis;
+import org.apache.commons.compress.compressors.CompressorInputStream;
+import org.apache.commons.compress.compressors.CompressorOutputStream;
+import org.apache.commons.compress.compressors.CompressorStreamFactory;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
+import org.json.JSONArray;
+import org.json.JSONObject;
 
-import java.io.IOException;
+import java.io.*;
 import java.nio.file.Paths;
 import java.util.List;
 
@@ -16,14 +22,34 @@ import java.util.List;
  */
 public class ScriptMain {
 
-    public static void main(String[] args) {
-        /* if(0 == args.length) {
-            System.out.println("No script file specified");
-            System.exit(0);
-        }*/
+    public static void main(String[] args) throws Exception {
+
+        // Build the json object
+        JSONArray array = new JSONArray(new double[200000]);
+
+        JSONObject json = new JSONObject();
+        json.put("text", "compression test");
+        json.put("array", array);
+
+        ByteArrayOutputStream output = new ByteArrayOutputStream();
+        CompressorOutputStream compress = new CompressorStreamFactory().createCompressorOutputStream(CompressorStreamFactory.GZIP, output);
+        BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(compress, "UTF-8"));
+        json.write(writer);
+        writer.flush();
+        writer.close();
+
+        byte[] data = output.toByteArray();
+        System.out.println(data.length + " bytes");
+
+        ByteArrayInputStream input = new ByteArrayInputStream(data);
+        CompressorInputStream expand = new CompressorStreamFactory().createCompressorInputStream(CompressorStreamFactory.GZIP, input);
+
+        JSONObject new_json = new JSONObject(IOUtils.toString(new InputStreamReader(expand, "UTF-8")));
+
+        System.out.println(new_json.getString("text"));
 
         // Not sure about the best way to test this
-        run("C:\\Users\\Tyler\\Desktop\\test_script.txt");
+        // run("C:\\Users\\Tyler\\Desktop\\test_script.txt");
     }
 
     private static void run(String path) {

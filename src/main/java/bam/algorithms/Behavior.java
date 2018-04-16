@@ -10,7 +10,9 @@ public class Behavior {
 
     private HashMap<String, double[][]> policies;
 
-    private Behavior() { policies = new HashMap<>(); }
+    private Behavior() {
+        policies = new HashMap<>();
+    }
 
     public static Behavior get() { return new Behavior(); }
 
@@ -43,6 +45,10 @@ public class Behavior {
         policies.put(task, policy);
 
         return this;
+    }
+
+    public boolean has(String task) {
+        return policies.containsKey(task);
     }
 
     public double[][] get(String task) {

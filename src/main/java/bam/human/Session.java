@@ -1,10 +1,14 @@
 package bam.human;
 
+import org.apache.commons.compress.compressors.CompressorOutputStream;
+import org.apache.commons.compress.compressors.CompressorStreamFactory;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.BufferedWriter;
 import java.io.IOException;
+import java.io.OutputStreamWriter;
 import java.io.PrintStream;
 
 public class Session {
@@ -215,10 +219,13 @@ public class Session {
             record("end")
                     .put("reason", reason);
 
-            // Save event log
-            PrintStream data = new PrintStream(directory.stream("events"));
-            data.print(events.toString(2));
-            data.close();
+            // Compress and save event log
+            CompressorOutputStream stream = new CompressorStreamFactory()
+                    .createCompressorOutputStream(CompressorStreamFactory.GZIP, directory.stream("events"));
+            BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(stream));
+
+            events.write(writer);
+            writer.close();
         } catch(Exception e) {
             debug.write("ERROR: couldn't save session data");
         }

@@ -1,5 +1,7 @@
 package bam.human.analysis;
 
+import org.json.JSONObject;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -8,14 +10,14 @@ public interface TimeScale {
     static TimeScale actions() {
         return new TimeScale() {
             @Override
-            public <T> List<T> process(Sequence<T> sequence) {
+            public <T> List<T> of(AnnotatedSession<T> session) {
                 ArrayList<T> values = new ArrayList<>();
 
-                for(int i=0; i < sequence.size(); ++i) {
-                    String type = sequence.event(i).getString("type");
+                for(int i=0; i < session.size(); ++i) {
+                    String type = session.event(i).getString("type");
 
                     if(type.equals("take-action") || type.equals("get-action")) {
-                        values.add(sequence.performance(i));
+                        values.add(session.annotation(i));
                     }
                 }
 
@@ -32,18 +34,19 @@ public interface TimeScale {
     static TimeScale demonstrations() {
         return new TimeScale() {
             @Override
-            public <T> List<T> process(Sequence<T> sequence) {
+            public <T> List<T> of(AnnotatedSession<T> session) {
                 ArrayList<T> values = new ArrayList<>();
                 boolean is_demonstration = false;
 
-                for(int i=0; i < sequence.size(); ++i) {
-                    String type = sequence.event(i).getString("type");
+                for(int i=0; i < session.size(); ++i) {
+                    JSONObject event = session.event(i);
+                    String type = event.getString("type");
 
                     if(type.equals("take-action")) {
-                        is_demonstration = true;
+                        is_demonstration = event.getJSONObject("data").getBoolean("on-task");
                     } else {
                         if(is_demonstration && type.equals("integrate"))
-                            values.add(sequence.performance(i));
+                            values.add(session.annotation(i));
 
                         is_demonstration = false;
                     }
@@ -62,18 +65,18 @@ public interface TimeScale {
     static TimeScale episodes() {
         return new TimeScale() {
             @Override
-            public <T> List<T> process(Sequence<T> sequence) {
+            public <T> List<T> of(AnnotatedSession<T> session) {
                 ArrayList<T> values = new ArrayList<>();
                 boolean is_episode = false;
 
-                for(int i=0; i < sequence.size(); ++i) {
-                    String type = sequence.event(i).getString("type");
+                for(int i=0; i < session.size(); ++i) {
+                    String type = session.event(i).getString("type");
 
                     if(type.equals("take-action") || type.equals("get-action")) {
                         is_episode = true;
                     } else {
                         if(is_episode && type.equals("integrate"))
-                            values.add(sequence.performance(i));
+                            values.add(session.annotation(i));
 
                         is_episode = false;
                     }
@@ -92,25 +95,25 @@ public interface TimeScale {
     static TimeScale clock(int increment) {
         return new TimeScale() {
             @Override
-            public <T> List<T> process(Sequence<T> sequence) {
+            public <T> List<T> of(AnnotatedSession<T> session) {
                 ArrayList<T> values = new ArrayList<>();
 
                 // Check if the event list is empty
-                if(sequence.size() <= 0)
+                if(session.size() <= 0)
                     return values;
 
                 // Get the first entry and get the initial time and performance
-                T current_performance = sequence.performance(0);
-                long start_time = sequence.event(0).getLong("timestamp");
+                T current_annotation = session.annotation(0);
+                long start_time = session.event(0).getLong("timestamp");
 
                 // Initialize the time index
                 long time_index = increment;
 
                 // Loop over all events in order
-                for(int index = 1; index < sequence.size(); ++index) {
+                for(int index = 1; index < session.size(); ++index) {
 
                     // Check if we have reached a new time increment
-                    long current_time = (sequence.event(index).getLong("timestamp") - start_time) / 1000000L;
+                    long current_time = (session.event(index).getLong("timestamp") - start_time) / 1000000L;
 
                     if(current_time >= time_index) {
 
@@ -118,7 +121,7 @@ public interface TimeScale {
                         do {
 
                             // Add data point for current time index
-                            values.add(current_performance);
+                            values.add(current_annotation);
 
                             // Increment the time index
                             time_index += increment;
@@ -126,11 +129,11 @@ public interface TimeScale {
                     }
 
                     // Update the most recent performance value
-                    current_performance = sequence.performance(index);
+                    current_annotation = session.annotation(index);
                 }
 
                 // Add the entry for the final time index
-                values.add(current_performance);
+                values.add(current_annotation);
 
                 // Return the behavior series
                 return values;
@@ -143,7 +146,7 @@ public interface TimeScale {
         };
     }
 
-    <T> List<T> process(Sequence<T> sequence);
+    <T> List<T> of(AnnotatedSession<T> session);
 
     int time(int index);
 }

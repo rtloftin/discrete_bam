@@ -1,5 +1,8 @@
 package bam.human.analysis;
 
+import org.json.JSONException;
+
+import java.io.IOException;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -16,17 +19,17 @@ import java.util.Optional;
 public class UserRecord {
 
     // The data from all the experimental sessions
-    private List<SessionRecord> sessions;
+    private SessionRecords sessions;
 
-    // The ID number for this user
+    // The ID number for this user -- may eventually replace with a unique ID code that we use for verification
     private int id;
 
-    private UserRecord(List<SessionRecord> sessions, int id)  {
+    private UserRecord(SessionRecords sessions, int id)  {
         this.sessions = sessions;
         this.id = id;
     }
 
-    public static Optional<UserRecord> load(Path root) {
+    public static Optional<UserRecord> load(Path root, EventDecoder decoder) {
         int id = Integer.parseInt(root.getFileName().toString());
         Path session_root = root.resolve("sessions");
 
@@ -40,19 +43,21 @@ public class UserRecord {
             List<SessionRecord> sessions = new ArrayList<>();
 
             for (Path directory : directories)
-                sessions.add(SessionRecord.load(directory));
+                sessions.add(SessionRecord.load(directory, decoder));
 
-            return Optional.of(new UserRecord(sessions, id));
-        } catch(Exception e) {
+            return Optional.of(new UserRecord(SessionRecords.of(sessions), id));
+        } catch(IOException|JSONException e) {
             System.out.println("Could not load user " + id + ", error: " + e.getMessage());
 
             return Optional.empty();
         }
     }
 
-    public List<SessionRecord> sessions() {
+    public SessionRecords sessions() {
         return sessions;
     }
 
-    public int id() { return id; }
+    public int id() {
+        return id;
+    }
 }

@@ -17,41 +17,29 @@ import java.util.List;
  */
 public class DataSet {
 
-    private List<UserRecord> users;
+    private UserRecords users;
 
-    private DataSet(List<UserRecord> users) { this.users = users; }
+    private DataSet(UserRecords users) {
+        this.users = users;
+    }
 
-    public static DataSet load(Path root) throws IOException {
+    public static DataSet load(Path root, EventDecoder decoder) throws IOException {
 
+        // Load users
         DirectoryStream<Path> user_directories = Files.newDirectoryStream(root.resolve("users"));
         List<UserRecord> users = new ArrayList<>();
 
         for(Path directory : user_directories)
-            UserRecord.load(directory).ifPresent((UserRecord user) -> users.add(user));
+            UserRecord.load(directory, decoder).ifPresent((UserRecord user) -> users.add(user));
 
-        return new DataSet(users);
+        return new DataSet(UserRecords.of(users));
     }
 
-    public Sessions sessions(UserFilter user_filter, SessionFilter... session_filters) {
-        List<SessionRecord> sessions = new ArrayList<>();
-
-        for(UserRecord user : users) {
-            if(user_filter.good(user))
-                for(SessionRecord session : user.sessions()) {
-                    boolean good_session = true;
-
-                    for(SessionFilter filter : session_filters)
-                        good_session &= filter.good(session);
-
-                    if(good_session)
-                        sessions.add(session);
-                }
-        }
-
-        return Sessions.of(sessions);
+    public static DataSet load(Path root) throws IOException {
+        return load(root, EventDecoder.JSON());
     }
 
-    public int participants() {
-        return users.size();
+    public UserRecords participants() {
+        return users;
     }
 }
