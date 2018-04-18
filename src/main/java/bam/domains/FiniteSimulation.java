@@ -49,6 +49,8 @@ public class FiniteSimulation {
 
     public void setTask(Task task) {
         current_task = task;
+
+        agent.task(task.name());
     }
 
     public void takeAction(int action, boolean on_task) {

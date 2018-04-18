@@ -39,8 +39,10 @@ public class RemoteGridWorld implements Remote {
         // Set initial task
         if(initial.has("task"))
             setTask(initial.getJSONObject("task"));
-        else
-            simulation.setTask(environment.tasks().get(0));
+        else { // Clearly there are flaws in the current implementation, but we can deal with them later on
+            current_task = environment.tasks().get(0);
+            simulation.setTask(current_task);
+        }
 
         // Set initial state
         if(initial.has("state"))

@@ -127,7 +127,12 @@ public class Session {
             try {
                 debug.write("user feedback");
 
+                remote.giveFeedback(message.data());
 
+                record("feedback")
+                        .put("feedback", message.data());
+
+                message.respond(new JSONObject());
             } catch(JSONException e) {
                 debug.write("ERROR: json exception");
                 message.error("json error");
@@ -183,7 +188,7 @@ public class Session {
 
                 remote.setState(message.data());
                 JSONObject response = new JSONObject()
-                        .put("state", remote.getState());
+                        .put("state", remote.getClientState());
 
                 record("set-state")
                         .put("state", remote.getState());

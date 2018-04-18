@@ -33,14 +33,12 @@ public class ServerMain {
                 .build();
 
         Undertow server = Undertow.builder()
-                .addHttpListener(8215, "localhost")
-                .setHandler(Handlers.path()
+                .addHttpListener(8215, "localhost", Handlers.path()
                         .addPrefixPath("/", Handlers
                                 .websocket((WebSocketHttpExchange exchange, WebSocketChannel channel) -> {
                                     web.add(WebsocketConnection.with(channel, 5000000L));
                                 })))
-                .addHttpListener(8217, "localhost")
-                .setHandler(Handlers.path()
+                .addHttpListener(8217, "localhost", Handlers.path()
                         .addPrefixPath("/", Handlers
                                 .websocket((WebSocketHttpExchange exchange, WebSocketChannel channel) -> {
                                     mturk.add(WebsocketConnection.with(channel, 5000000L));
@@ -68,14 +66,12 @@ public class ServerMain {
                 .build();
 
         Undertow server = Undertow.builder()
-                .addHttpListener(8215, "localhost")
-                .setHandler(Handlers.path()
+                .addHttpListener(8215, "localhost", Handlers.path()
                         .addPrefixPath("/", Handlers
                                 .websocket((WebSocketHttpExchange exchange, WebSocketChannel channel) -> {
                                     web.add(WebsocketConnection.with(channel, 5000000L));
                                 })))
-                .addHttpListener(8217, "localhost")
-                .setHandler(Handlers.path()
+                .addHttpListener(8217, "localhost", Handlers.path()
                         .addPrefixPath("/", Handlers
                                 .websocket((WebSocketHttpExchange exchange, WebSocketChannel channel) -> {
                                     mturk.add(WebsocketConnection.with(channel, 5000000L));

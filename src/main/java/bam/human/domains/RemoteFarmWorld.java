@@ -40,8 +40,10 @@ public class RemoteFarmWorld implements Remote {
         // Set initial task
         if(initial.has("task"))
             setTask(initial.getJSONObject("task"));
-        else
-            simulation.setTask(environment.tasks().get(0));
+        else {
+            current_task = environment.tasks().get(0);
+            simulation.setTask(current_task);
+        }
 
         // Set initial state
         if(initial.has("state"))
