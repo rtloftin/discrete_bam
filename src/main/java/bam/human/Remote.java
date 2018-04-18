@@ -76,13 +76,6 @@ public interface Remote {
     }
 
     /**
-     * Updates the agent's knowledge state to incorporate
-     * all the data currently available, and returns a JSON
-     * representation of the agent's current knowledge state.
-     */
-    JSONObject integrate() throws JSONException;
-
-    /**
      * Sets the current task of the environment, and
      * informs the agent that the task has changed.
      *
@@ -112,9 +105,10 @@ public interface Remote {
      * as a teacher action depends on the agent's settings.
      *
      * @param action the JSON representation of the client's action
+     * @param on_task whether the action was on-task or off-task
      * @throws JSONException if the JSON object isn't formatted correctly
      */
-    void takeAction(JSONObject action) throws JSONException;
+    void takeAction(JSONObject action, boolean on_task) throws JSONException;
 
     /**
      * Takes an action from the learning agent's current
@@ -126,8 +120,27 @@ public interface Remote {
     void takeAction();
 
     /**
+     * Gives evaluative feedback to the agent.
+     *
+     * @param feedback a JSON representation of the feedback signal
+     * @throws JSONException if the JSON object isn't formatted correctly
+     */
+    void giveFeedback(JSONObject feedback) throws JSONException;
+
+    /**
+     * Tells the agent to update its internal model,
+     * and returns a JSON representation of the
+     * agent's updated behavior.
+     *
+     * @return the JSON representation of the agent's current behavior
+     * @throws JSONException if there is an error constructing the JSON object
+     */
+    JSONObject integrate() throws JSONException;
+
+    /**
      * Gets the maximum episode length
-     * for this environment.
+     * for this environment.  Needed for
+     * client configuration.
      *
      * @return the maximum episode length
      */
@@ -136,6 +149,7 @@ public interface Remote {
     /**
      * Gets a JSON representation of the list
      * of tasks available in this environment.
+     * Needed for client configuration.
      *
      * @return the list of tasks as a JSON array
      * @throws JSONException if there is an error constructing the JSON array
@@ -151,14 +165,44 @@ public interface Remote {
      * @return the JSON representation of the current layout
      * @throws JSONException if there is an error constructing the JSON object
      */
-    JSONObject getLayout() throws JSONException;
+    JSONObject getClientLayout() throws JSONException;
+
+    /**
+     * Gets a JSON representation of the current task.
+     *
+     * @return the JSON representation of the current task
+     * @throws JSONException if there is an error constructing the JSON object
+     */
+    JSONObject getClientTask() throws JSONException;
 
     /**
      * Gets a JSON representation of the current state
-     * of the environment.
+     * of the environment, including all the transient
+     * rendering information.  This needs to be sent every
+     * time the state changes.
+     *
+     * @return the JSON representation of the current state for rendering
+     * @throws JSONException if there is an error constructing the JSON object
+     */
+    JSONObject getClientState() throws JSONException;
+
+    /**
+     * Gets a JSON representation of
+     * the current state of the environment,
+     * used for data logging, and is distinct
+     * from the representation used for
      *
      * @return the JSON representation of the current state
      * @throws JSONException if there is an error constructing the JSON object
      */
     JSONObject getState() throws JSONException;
+
+    /**
+     * Gets a JSON representation of the
+     * most recently taken action
+     *
+     * @return the JSON representation of the previous action
+     * @throws JSONException if there is an error constructing the JSON object
+     */
+    JSONObject getAction() throws JSONException;
 }

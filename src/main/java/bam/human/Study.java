@@ -1,9 +1,7 @@
 package bam.human;
 
-import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.io.IOException;
 import java.io.PrintStream;
 import java.util.LinkedList;
 import java.util.List;
@@ -14,7 +12,7 @@ import java.util.Optional;
  * the configuration for new users that we wish to add. This
  * class also allows us to limit the number of users in the system
  */
-class Users {
+class Study {
 
     /**
      * Represents a connection to a single user. When instantiated,
@@ -49,7 +47,7 @@ class Users {
             }).add("code", (Connection.Message message) -> {
                 log.write("CODE REQUESTED");
 
-                message.respond(new JSONObject().put("code", code));
+                message.respond(new JSONObject().put("code", code)); // Might need error handling here
             }).add("start-session", (Connection.Message message) -> {
                 if(null != current_session) {
                     log.write("ERROR: previous session not closed");
@@ -85,7 +83,7 @@ class Users {
                 log.write("CONNECTION CLOSED: " + reason);
                 log.close();
 
-                users.remove(this);
+                pool.remove(this);
             });
         }
     }
@@ -97,16 +95,16 @@ class Users {
      * session factory for all users.
      */
     static class Builder {
-        private int max_users = 4;
+        private Pool pool;
         private Directory directory = null;
         private Session.Factory sessions = null;
         private CodeFactory codes = null;
 
         private Builder() {}
 
-        public Builder maxUsers(int max_users) {
-            this.max_users = max_users;
-            return  this;
+        public Builder pool(Pool pool) {
+            this.pool = pool;
+            return this;
         }
 
         public Builder dataRoot(Directory directory) {
@@ -124,42 +122,37 @@ class Users {
             return this;
         }
 
-        public Users build() {
+        public Study build() {
             if(null == directory)
                 throw new RuntimeException("No root directory defined for user data");
             if(null == sessions)
                 throw new RuntimeException("No session factory defined");
             if(null == codes)
-                codes = CodeFactory.dummy("no codes defined");
+                codes = CodeFactory.dummy("no verification codes defined");
 
-            return new Users(this);
+            return new Study(this);
         }
     }
 
     static Builder builder() { return new Builder(); }
 
     // Configuration
-    private final int max_users;
+    private final Pool pool;
     private final Directory directory;
     private final Session.Factory sessions;
     private final CodeFactory codes;
 
-    // The list of active users
-    private final List<User> users;
-
-    private Users(Builder builder) {
-        this.max_users = builder.max_users;
+    private Study(Builder builder) {
+        this.pool = builder.pool;
         this.directory = builder.directory;
         this.sessions = builder.sessions;
         this.codes = builder.codes;
-
-        users = new LinkedList<>();
     }
 
     void add(Connection connection) {
 
         // Check if we have too many users already
-        if(users.size() >= max_users)
+        if(pool.full())
             connection.refuse("busy");
 
         // Check if we have any codes left
@@ -170,7 +163,7 @@ class Users {
 
         // Try to create the user
         try {
-            users.add(this.new User(connection, directory.unique("users"), code.get()));
+            pool.add(this.new User(connection, directory.unique("users"), code.get()));
         } catch(Exception e) {
             connection.refuse(e.getMessage());
         }
