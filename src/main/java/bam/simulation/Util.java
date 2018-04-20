@@ -64,7 +64,8 @@ public class Util {
                     + "_" +  String.format("%02d", id++) + File.separator);
 
         // Create the directory
-        folder.mkdirs();
+        if(!folder.mkdirs())
+            throw new RuntimeException("Could not create data directory");
 
         // Return the directory
         return folder;

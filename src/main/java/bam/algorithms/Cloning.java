@@ -5,7 +5,6 @@ import bam.algorithms.action.BoltzmannActionModel;
 import bam.algorithms.action.GreedyActionModel;
 import bam.algorithms.feedback.FeedbackModel;
 import bam.algorithms.feedback.NoFeedback;
-import bam.algorithms.optimization.Optimization;
 import bam.algorithms.variational.Variational;
 import org.json.JSONException;
 import org.json.JSONObject;

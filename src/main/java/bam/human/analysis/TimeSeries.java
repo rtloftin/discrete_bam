@@ -1,6 +1,7 @@
 package bam.human.analysis;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
 /**
@@ -9,9 +10,9 @@ import java.util.List;
  * scale such as actions, demonstrations or
  * wall-clock time.
  */
-public class TimeSeries<T> {
+public class TimeSeries<T> implements Iterable<TimeSeries<T>.Entry> {
 
-    public static class Entry<T> {
+    public class Entry {
         private final List<T> data;
         private final int time;
 
@@ -33,64 +34,60 @@ public class TimeSeries<T> {
         }
     }
 
-    private final List<Entry<T>> entries;
-    private final List<T> performance;
-    private final List<Integer> time;
+    private final List<Entry> entries;
 
+    private final TimeScale time_scale;
     private final int start;
     private final int end;
 
-    private TimeSeries(List<List<T>> series, TimeScale scale) {
-        entries = new ArrayList<>();
-        performance = new ArrayList<>();
-        time = new ArrayList<>();
+    private TimeSeries(List<List<T>> sessions, TimeScale time_scale) {
+        this.entries = new ArrayList<>();
 
-        for(List<T> sequence : series) {
-            for(int i=0; i < sequence.size(); ++i) {
-                if(entries.size() <= i)
-                    entries.add(new Entry<>(scale.time(i)));
+        for (List<T> session : sessions) {
+            for (int i = 0; i < session.size(); ++i) {
+                if (entries.size() <= i)
+                    entries.add(this.new Entry(time_scale.time(i)));
 
-                entries.get(i).add(sequence.get(i));
+                entries.get(i).add(session.get(i));
             }
-
-            time.add(sequence.size());
-            performance.add(sequence.get(sequence.size() - 1));
         }
 
-        start = scale.time(0);
-        end = scale.time(Math.max(entries.size() - 1, 0));
+        this.time_scale = time_scale;
+        this.start = time_scale.time(0);
+        this.end = time_scale.time(Math.max(entries.size() - 1, 0));
     }
 
-    public static <T> TimeSeries of(Sequences<T> sequences, TimeScale scale) {
+    public static <T> TimeSeries of(List<AnnotatedSession<T>> sessions, TimeScale time_scale) {
         List<List<T>> series = new ArrayList<>();
 
-        for(int i=0; i < sequences.size(); ++i)
-            series.add(scale.process(sequences.get(i)));
+        for (AnnotatedSession<T> session : sessions)
+            series.add(time_scale.of(session));
 
-        return new TimeSeries(series, scale);
+        return new TimeSeries(series, time_scale);
+    }
+
+    public int start() {
+        return start;
+    }
+
+    public int end() {
+        return end;
+    }
+
+    public int time(int index) {
+        return time_scale.time(index);
     }
 
     public int size() {
         return entries.size();
     }
 
-    public Entry<T> get(int index) {
+    public Entry get(int index) {
         return entries.get(index);
     }
 
-    public long start() {
-        return start;
-    }
-
-    public long end() {
-        return end;
-    }
-
-    public List<T> performance() {
-        return performance;
-    }
-
-    public List<Integer> time() {
-        return time;
+    @Override
+    public Iterator<TimeSeries<T>.Entry> iterator() {
+        return entries.iterator();
     }
 }

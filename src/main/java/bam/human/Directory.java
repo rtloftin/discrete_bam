@@ -31,6 +31,10 @@ public class Directory {
         return new Directory(Files.createDirectories(Paths.get(path)));
     }
 
+    public static Directory local(Path path) throws IOException {
+        return new Directory(Files.createDirectories(path));
+    }
+
     public void save(String name, String content) throws IOException {
         PrintStream stream = new PrintStream(stream(name));
         stream.print(content);

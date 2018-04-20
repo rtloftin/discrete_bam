@@ -1,6 +1,5 @@
 package bam.simulation;
 
-import bam.algorithms.Visualization;
 import bam.algorithms.*;
 import bam.domains.Environment;
 import bam.domains.Task;
@@ -344,7 +343,8 @@ public class SingleTaskDemoExperiment {
     public void run(File root) throws Exception {
 
         // Initialize data directory
-        root.mkdirs();
+        if(!root.mkdirs())
+            throw new Exception("Could not create data directory");
 
         // Initialize log
         Log log = Log.combined(new File(root, "log"));
@@ -389,11 +389,15 @@ public class SingleTaskDemoExperiment {
 
         for(Environment environment : environments) {
             File env_root = new File(root, environment.name());
-            env_root.mkdir();
+
+            if(!env_root.mkdir())
+                throw new Exception("Could not create data directory");
 
             for(Task task : environment.tasks()) {
                 File task_root = new File(env_root, task.name());
-                task_root.mkdir();
+
+                if(!task_root.mkdir())
+                    throw new Exception("Could not create data directory");
 
                 experiments.add(pool.submit(() -> experiment(environment, task, task_root, log)));
             }

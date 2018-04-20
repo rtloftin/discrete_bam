@@ -2,8 +2,7 @@ package bam.human.domains;
 
 import bam.algorithms.Agent;
 import bam.algorithms.Algorithm;
-import bam.algorithms.StateTransition;
-import bam.algorithms.TeacherAction;
+import bam.algorithms.FiniteSimulation;
 import bam.domains.NavGrid;
 import bam.domains.Task;
 import bam.domains.farm_world.FarmWorld;
@@ -18,45 +17,37 @@ import java.util.concurrent.ThreadLocalRandom;
 public class RemoteFarmWorld implements Remote {
 
     // The agent being trained (may be a dummy agent, such as an expert)
-    private Agent agent;
+    private final Agent agent;
 
     // The grid world environment being represented
-    private FarmWorld environment;
+    private final FarmWorld environment;
+
+    // The current simulation
+    private final FiniteSimulation simulation;
 
     // The current task
     private FarmWorld.Task current_task;
-
-    // The current state index
-    private int current_state;
 
     private RemoteFarmWorld(FarmWorld environment, Agent agent, JSONObject initial) throws JSONException {
         this.environment = environment;
         this.agent = agent;
 
+        // Initialize simulation
+        simulation = FiniteSimulation.of(environment.dynamics(), agent);
+
         // Set initial task
         if(initial.has("task"))
             setTask(initial.getJSONObject("task"));
-        else
-            setTask(environment.tasks().get(0).name());
+        else {
+            current_task = environment.tasks().get(0);
+            simulation.setTask(current_task.name());
+        }
 
         // Set initial state
         if(initial.has("state"))
             setState(initial.getJSONObject("state"));
         else
             resetState();
-    }
-
-    private void setTask(String name) {
-
-        // Tell the agent
-        agent.task(name);
-
-        // Change the task -- find the first matching task
-        for(FarmWorld.Task next_task : environment.tasks())
-            if(next_task.name().equals(name)) {
-                current_task = next_task;
-                break;
-            }
     }
 
     public static RemoteFarmWorld with(FarmWorld environment, Agent agent, JSONObject initial) throws JSONException {
@@ -82,82 +73,97 @@ public class RemoteFarmWorld implements Remote {
     }
 
     @Override
-    public JSONObject integrate() throws JSONException {
+    public synchronized JSONObject integrate() throws JSONException {
         return agent.integrate().serialize();
     }
 
     @Override
-    public void setTask(JSONObject task) throws JSONException {
-        setTask(task.getString("name"));
+    public synchronized void setTask(JSONObject task) throws JSONException {
+        if(task.has("name")) {
+            String name = task.getString("name");
+
+            // Find the task with the same name
+            for(FarmWorld.Task next_task : environment.tasks())
+                if(next_task.name().equals(name)) {
+
+                    // Change the current task
+                    current_task = next_task;
+
+                    // Set the new task
+                    simulation.setTask(current_task.name());
+
+                    // Stop on the first task with this name
+                    break;
+                }
+        }
     }
 
     @Override
-    public void setState(JSONObject state) throws JSONException {
+    public synchronized void setState(JSONObject state) throws JSONException {
         int row = state.getInt("y");
         int column = state.getInt("x");
         Machine machine = state.getEnum(Machine.class, "machine");
 
-        current_state = environment.index(row, column, machine);
+        simulation.setState(environment.index(row, column, machine));
     }
 
     @Override
-    public void resetState() {
-        current_state = current_task.initial(ThreadLocalRandom.current());
+    public synchronized void resetState() {
+        simulation.setState(current_task.initial(ThreadLocalRandom.current()));
     }
 
     @Override
-    public void takeAction(JSONObject action) throws JSONException {
+    public synchronized void takeAction(JSONObject action, boolean on_task) throws JSONException {
+
         // Parse action
         String action_type = action.getString("type");
         int action_index = NavGrid.STAY;
 
-        if(action_type.equals("up")) {
-            action_index = NavGrid.UP;
-        } else if(action_type.equals("down")) {
-            action_index = NavGrid.DOWN;
-        } else if(action_type.equals("left")) {
-            action_index = NavGrid.LEFT;
-        } else if(action_type.equals("right")) {
-            action_index = NavGrid.RIGHT;
+        switch (action_type) {
+            case "up":
+                action_index = NavGrid.UP;
+                break;
+            case "down":
+                action_index = NavGrid.DOWN;
+                break;
+            case "left":
+                action_index = NavGrid.LEFT;
+                break;
+            case "right":
+                action_index = NavGrid.RIGHT;
+                break;
         }
 
-        // Show action to agent
-        if(action.optBoolean("on-task", true))
-            agent.observe(TeacherAction.of(current_state, action_index));
-
-        // Compute next state
-        int next_state = environment.dynamics()
-                .transition(current_state, action_index, ThreadLocalRandom.current());
-
-        // Show transition to agent
-        agent.observe(StateTransition.of(current_state, action_index, next_state));
-
-        // Update state
-        current_state = next_state;
+        // Take action
+        simulation.takeAction(action_index, on_task);
     }
 
     @Override
-    public void takeAction() {
-
-        // Get action from agent
-        int action = agent.action(current_state, ThreadLocalRandom.current());
-
-        // Compute next state
-        int next_state = environment.dynamics()
-                .transition(current_state, action, ThreadLocalRandom.current());
-
-        // Sow transition to agent
-        agent.observe(StateTransition.of(current_state, action, next_state));
-
-        // Update state
-        current_state = next_state;
+    public synchronized void takeAction() {
+        simulation.takeAction();
     }
 
     @Override
-    public int getDepth() { return environment.dynamics().depth(); }
+    public synchronized void giveFeedback(JSONObject feedback) throws JSONException {
+        String type = feedback.optString("type", "none");
+        double value = 0.0;
+
+        if(type.equals("reward")) {
+            value = 1.0;
+        } else if(type.equals("punishment")) {
+            value = -1.0;
+        }
+
+        simulation.giveFeedback(value);
+    }
 
     @Override
-    public JSONArray getTasks() throws JSONException {
+    public synchronized int getDepth() {
+        return environment.dynamics().depth();
+    }
+
+    @Override
+    public synchronized JSONArray getTasks() throws JSONException {
         JSONArray tasks = new JSONArray();
 
         for(Task task : environment.tasks())
@@ -169,30 +175,39 @@ public class RemoteFarmWorld implements Remote {
     }
 
     @Override
-    public JSONObject getLayout() throws JSONException {
+    public synchronized JSONObject getClientLayout() throws JSONException {
+        return new JSONObject()
+                .put("width", environment.width())
+                .put("height", environment.height())
+                .put("map", new JSONArray(environment.map()))
+                .put("machines", new JSONArray(environment.machines()));
+    }
 
-        // Write task
-        JSONObject task = new JSONObject()
+    @Override
+    public synchronized JSONObject getClientTask() throws JSONException {
+        return new JSONObject()
                 .put("x", current_task.column())
                 .put("y", current_task.row())
                 .put("width", current_task.width())
                 .put("height", current_task.height())
                 .put("name", current_task.name());
-
-        // Return layout representation
-        return new JSONObject()
-                .put("width", environment.width())
-                .put("height", environment.height())
-                .put("map", new JSONArray(environment.map()))
-                .put("machines", new JSONArray(environment.machines()))
-                .put("task", task);
     }
 
     @Override
-    public JSONObject getState() throws JSONException {
+    public synchronized JSONObject getClientState() throws JSONException {
         return new JSONObject()
-                .put("x", environment.column(current_state))
-                .put("y", environment.row(current_state))
-                .put("machine", environment.machine(current_state));
+                .put("x", environment.column(simulation.getState()))
+                .put("y", environment.row(simulation.getState()))
+                .put("machine", environment.machine(simulation.getState()));
+    }
+
+    @Override
+    public synchronized JSONObject getState() throws JSONException {
+        return new JSONObject().put("state", simulation.getState());
+    }
+
+    @Override
+    public synchronized JSONObject getAction() throws JSONException {
+        return new JSONObject().put("action", simulation.getAction());
     }
 }

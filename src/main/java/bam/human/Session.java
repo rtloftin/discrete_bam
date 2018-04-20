@@ -1,11 +1,14 @@
 package bam.human;
 
+import org.apache.commons.compress.compressors.CompressorOutputStream;
+import org.apache.commons.compress.compressors.CompressorStreamFactory;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.BufferedWriter;
 import java.io.IOException;
-import java.io.PrintStream;
+import java.io.OutputStreamWriter;
 
 public class Session {
 
@@ -79,14 +82,20 @@ public class Session {
             try {
                 debug.write("user action");
 
-                remote.takeAction(message.data());
+                JSONObject action = message.data();
+                boolean on_task = action.optBoolean("on-task", true);
+
+                JSONObject start = remote.getState();
+
+                remote.takeAction(action, on_task);
                 JSONObject response = new JSONObject()
-                        .put("state", remote.getState())
-                        .put("layout", remote.getLayout());
+                        .put("state", remote.getClientState());
 
                 record("take-action")
-                        .put("data", message.data())
-                        .put("state", response.getJSONObject("state"));
+                        .put("start", start)
+                        .put("action", remote.getAction())
+                        .put("end", remote.getState())
+                        .put("on-task", on_task);
 
                 message.respond(response);
             } catch(JSONException e) {
@@ -97,15 +106,32 @@ public class Session {
             try {
                 debug.write("agent action");
 
+                JSONObject start = remote.getState();
+
                 remote.takeAction();
                 JSONObject response = new JSONObject()
-                        .put("state", remote.getState())
-                        .put("layout", remote.getLayout());
+                        .put("state", remote.getClientState());
 
                 record("get-action")
-                        .put("state", response.getJSONObject("state"));
+                        .put("start", start)
+                        .put("action", remote.getAction())
+                        .put("end", remote.getState());
 
                 message.respond(response);
+            } catch(JSONException e) {
+                debug.write("ERROR: json exception");
+                message.error("json error");
+            }
+        }).add("feedback", (Connection.Message message) -> {
+            try {
+                debug.write("user feedback");
+
+                remote.giveFeedback(message.data());
+
+                record("feedback")
+                        .put("feedback", message.data());
+
+                message.respond();
             } catch(JSONException e) {
                 debug.write("ERROR: json exception");
                 message.error("json error");
@@ -116,13 +142,11 @@ public class Session {
 
                 remote.setTask(message.data());
                 JSONObject response = new JSONObject()
-                        .put("state", remote.getState())
-                        .put("layout", remote.getLayout());
+                        .put("state", remote.getClientState())
+                        .put("task", remote.getClientTask());
 
                 record("task")
-                        .put("data", message.data())
-                        .put("state", response.getJSONObject("state"))
-                        .put("layout", response.getJSONObject("layout"));
+                        .put("task", message.data());
 
                 message.respond(response);
             } catch(JSONException e) {
@@ -136,7 +160,7 @@ public class Session {
                 record("integrate")
                         .put("behavior", remote.integrate());
 
-                message.respond(new JSONObject());
+                message.respond();
             } catch(JSONException e) {
                 debug.write("ERROR: json exception");
                 message.error("json error");
@@ -147,11 +171,10 @@ public class Session {
 
                 remote.resetState();
                 JSONObject response = new JSONObject()
-                        .put("state", remote.getState())
-                        .put("layout", remote.getLayout());
+                        .put("state", remote.getClientState());
 
                 record("reset")
-                        .put("state", response.getJSONObject("state"));
+                        .put("state", remote.getState());
 
                 message.respond(response);
             } catch(JSONException e) {
@@ -164,12 +187,10 @@ public class Session {
 
                 remote.setState(message.data());
                 JSONObject response = new JSONObject()
-                        .put("state", remote.getState())
-                        .put("layout", remote.getLayout());
+                        .put("state", remote.getClientState());
 
                 record("set-state")
-                        .put("data", message.data())
-                        .put("state", response.getJSONObject("state"));
+                        .put("state", remote.getState());
 
                 message.respond(response);
             } catch(JSONException e) {
@@ -181,8 +202,9 @@ public class Session {
         debug.write("session started");
 
         JSONObject response = new JSONObject()
-                .put("state", remote.getState())
-                .put("layout", remote.getLayout())
+                .put("state", remote.getClientState())
+                .put("task", remote.getClientTask())
+                .put("layout", remote.getClientLayout())
                 .put("tasks", remote.getTasks())
                 .put("depth", remote.getDepth());
 
@@ -215,10 +237,13 @@ public class Session {
             record("end")
                     .put("reason", reason);
 
-            // Save event log
-            PrintStream data = new PrintStream(directory.stream("events"));
-            data.print(events.toString(2));
-            data.close();
+            // Compress and save event log
+            CompressorOutputStream stream = new CompressorStreamFactory()
+                    .createCompressorOutputStream(CompressorStreamFactory.GZIP, directory.stream("events"));
+            BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(stream));
+
+            events.write(writer);
+            writer.close();
         } catch(Exception e) {
             debug.write("ERROR: couldn't save session data");
         }

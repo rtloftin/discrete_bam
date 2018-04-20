@@ -2,8 +2,7 @@ package bam.human.domains;
 
 import bam.algorithms.Agent;
 import bam.algorithms.Algorithm;
-import bam.algorithms.StateTransition;
-import bam.algorithms.TeacherAction;
+import bam.algorithms.FiniteSimulation;
 import bam.domains.NavGrid;
 import bam.domains.Task;
 import bam.domains.gravity_world.Colors;
@@ -16,6 +15,7 @@ import org.json.JSONObject;
 
 import java.util.concurrent.ThreadLocalRandom;
 
+
 public class RemoteGravityWorld implements Remote {
 
     // The agent being trained (may be a dummy agent, such as an expert)
@@ -24,40 +24,32 @@ public class RemoteGravityWorld implements Remote {
     // The gravity world environment being represented
     private GravityWorld environment;
 
-    // The current task
-    private GravityWorld.Task current_task;
+    // The current simulation
+    private final FiniteSimulation simulation;
 
-    private int current_state; // The current state index
+    private GravityWorld.Task current_task; // The current task
     private String direction; // The direction the robot is currently facing
 
     private RemoteGravityWorld(GravityWorld environment, Agent agent, JSONObject initial) throws JSONException {
         this.environment = environment;
         this.agent = agent;
 
+        // Initialize simulation
+        simulation = FiniteSimulation.of(environment.dynamics(), agent);
+
         // Set initial task
         if(initial.has("task"))
             setTask(initial.getJSONObject("task"));
-        else
-            setTask(environment.tasks().get(0).name());
+        else {
+            current_task = environment.tasks().get(0);
+            simulation.setTask(current_task.name());
+        }
 
         // Set initial state
         if(initial.has("state"))
             setState(initial.getJSONObject("state"));
         else
             resetState();
-    }
-
-    private void setTask(String name) {
-
-        // Tell the agent
-        agent.task(name);
-
-        // Change the task -- find the first matching task
-        for(GravityWorld.Task next_task : environment.tasks())
-            if(next_task.name().equals(name)) {
-                current_task = next_task;
-                break;
-            }
     }
 
     public static RemoteGravityWorld with(GravityWorld environment, Agent agent, JSONObject initial) throws JSONException {
@@ -83,31 +75,48 @@ public class RemoteGravityWorld implements Remote {
     }
 
     @Override
-    public JSONObject integrate() throws JSONException {
+    public synchronized JSONObject integrate() throws JSONException {
         return agent.integrate().serialize();
     }
 
     @Override
-    public void setTask(JSONObject task) throws JSONException {
-        setTask(task.getString("name"));
+    public synchronized void setTask(JSONObject task) throws JSONException {
+        if(task.has("name")) {
+            String name = task.getString("name");
+
+            // Find the task with the same name
+            for(GravityWorld.Task next_task : environment.tasks())
+                if(next_task.name().equals(name)) {
+
+                    // Change the current task
+                    current_task = next_task;
+
+                    // Set the new task
+                    simulation.setTask(current_task.name());
+
+                    // Stop on the first task with this name
+                    break;
+                }
+        }
     }
 
     @Override
-    public void setState(JSONObject state) throws JSONException {
+    public synchronized void setState(JSONObject state) throws JSONException {
         int row = state.getInt("y");
         int column = state.getInt("x");
         Gravity gravity = state.getEnum(Gravity.class, "gravity");
 
         direction = state.getString("direction");
-        current_state = environment.index(row, column, gravity);
+        simulation.setState(environment.index(row, column, gravity));
     }
 
     @Override
-    public void resetState() {
-        current_state = current_task.initial(ThreadLocalRandom.current());
+    public synchronized void resetState() {
+        int state = current_task.initial(ThreadLocalRandom.current());
+        simulation.setState(state);
 
-        int row_offset = environment.row(current_state) - (environment.height() / 2);
-        int column_offset = environment.column(current_state) - (environment.width() / 2);
+        int row_offset = environment.row(state) - (environment.height() / 2);
+        int column_offset = environment.column(state) - (environment.width() / 2);
 
         if(row_offset <= 0) {
             direction = "down";
@@ -128,49 +137,41 @@ public class RemoteGravityWorld implements Remote {
     }
 
     @Override
-    public void takeAction(JSONObject action) throws JSONException {
+    public synchronized void takeAction(JSONObject action, boolean on_task) throws JSONException {
 
         // Parse action
         String action_type = action.getString("type");
         int action_index = NavGrid.STAY;
 
-        if(action_type.equals("up")) {
-            action_index = NavGrid.UP;
-            direction = "up";
-        }
-        else if(action_type.equals("down")) {
-            action_index = NavGrid.DOWN;
-            direction = "down";
-        }
-        else if(action_type.equals("left")) {
-            action_index = NavGrid.LEFT;
-            direction = "left";
-        }
-        else if(action_type.equals("right")) {
-            action_index = NavGrid.RIGHT;
-            direction = "right";
+        switch (action_type) {
+            case "up":
+                action_index = NavGrid.UP;
+                direction = "up";
+                break;
+            case "down":
+                action_index = NavGrid.DOWN;
+                direction = "down";
+                break;
+            case "left":
+                action_index = NavGrid.LEFT;
+                direction = "left";
+                break;
+            case "right":
+                action_index = NavGrid.RIGHT;
+                direction = "right";
+                break;
         }
 
-        // Show action to agent
-        if(action.optBoolean("on-task", true))
-            agent.observe(TeacherAction.of(current_state, action_index));
-
-        // Compute next state
-        int next_state = environment.dynamics()
-                .transition(current_state, action_index, ThreadLocalRandom.current());
-
-        // Show transition to agent
-        agent.observe(StateTransition.of(current_state, action_index, next_state));
-
-        // Update state
-        current_state = next_state;
+        // Take action
+        simulation.takeAction(action_index, on_task);
     }
 
     @Override
-    public void takeAction() {
+    public synchronized void takeAction() {
 
-        // Get action from agent
-        int action = agent.action(current_state, ThreadLocalRandom.current());
+        simulation.takeAction();
+
+        int action = simulation.getAction();
 
         if(NavGrid.UP == action)
             direction = "up";
@@ -180,25 +181,29 @@ public class RemoteGravityWorld implements Remote {
             direction = "left";
         else if(NavGrid.RIGHT == action)
             direction = "right";
-
-        // Compute next state
-        int next_state = environment.dynamics()
-                .transition(current_state, action, ThreadLocalRandom.current());
-
-        // Sow transition to agent
-        agent.observe(StateTransition.of(current_state, action, next_state));
-
-        // Update state
-        current_state = next_state;
     }
 
     @Override
-    public int getDepth() {
+    public synchronized void giveFeedback(JSONObject feedback) throws JSONException {
+        String type = feedback.optString("type", "none");
+        double value = 0.0;
+
+        if(type.equals("reward")) {
+            value = 1.0;
+        } else if(type.equals("punishment")) {
+            value = -1.0;
+        }
+
+        simulation.giveFeedback(value);
+    }
+
+    @Override
+    public synchronized int getDepth() {
         return environment.dynamics().depth();
     }
 
     @Override
-    public JSONArray getTasks() throws JSONException {
+    public synchronized JSONArray getTasks() throws JSONException {
         JSONArray tasks = new JSONArray();
 
         for(Task task : environment.tasks())
@@ -210,13 +215,7 @@ public class RemoteGravityWorld implements Remote {
     }
 
     @Override
-    public JSONObject getLayout() throws JSONException {
-
-        // Write task
-        JSONObject task = new JSONObject()
-                .put("x", current_task.column())
-                .put("y", current_task.row())
-                .put("name", current_task.name());
+    public synchronized JSONObject getClientLayout() throws JSONException {
 
         // Write gravity
         JSONObject gravity = new JSONObject();
@@ -229,16 +228,33 @@ public class RemoteGravityWorld implements Remote {
                 .put("width", environment.width())
                 .put("height", environment.height())
                 .put("colors", new JSONArray(environment.colors()))
-                .put("gravity", gravity)
-                .put("task", task);
+                .put("gravity", gravity);
     }
 
     @Override
-    public JSONObject getState() throws JSONException {
+    public synchronized JSONObject getClientTask() throws JSONException {
         return new JSONObject()
-                .put("x", environment.column(current_state))
-                .put("y", environment.row(current_state))
+                .put("x", current_task.column())
+                .put("y", current_task.row())
+                .put("name", current_task.name());
+    }
+
+    @Override
+    public synchronized JSONObject getClientState() throws JSONException {
+        return new JSONObject()
+                .put("x", environment.column(simulation.getState()))
+                .put("y", environment.row(simulation.getState()))
                 .put("direction", direction)
-                .put("gravity", environment.gravity(current_state));
+                .put("gravity", environment.gravity(simulation.getState()));
+    }
+
+    @Override
+    public synchronized JSONObject getState() throws JSONException {
+        return new JSONObject().put("state", simulation.getState());
+    }
+
+    @Override
+    public synchronized JSONObject getAction() throws JSONException {
+        return new JSONObject().put("action", simulation.getAction());
     }
 }

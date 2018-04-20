@@ -6,7 +6,7 @@ import io.undertow.websockets.core.*;
 import io.undertow.websockets.spi.WebSocketHttpExchange;
 
 import java.io.IOException;
-import java.net.InetAddress;
+import java.nio.file.Paths;
 
 public class ServerMain {
 
@@ -17,18 +17,31 @@ public class ServerMain {
 
     // The real server code will go here
     private static void experimentServer() throws IOException {
-        Users users = Users.builder()
-                .maxUsers(16)
-                .dataRoot(Directory.local(System.getProperty("user.home")))
+
+        Pool users = Pool.maxItems(16);
+
+        Study web = Study.builder()
+                .pool(users)
+                .dataRoot(Directory.local(Paths.get(System.getProperty("user.home")).resolve("web")))
+                .sessions(ConfigurationFactory.experiment())
+                .build();
+
+        Study mturk = Study.builder()
+                .pool(users)
+                .dataRoot(Directory.local(Paths.get(System.getProperty("user.home")).resolve("mturk")))
                 .sessions(ConfigurationFactory.experiment())
                 .build();
 
         Undertow server = Undertow.builder()
-                .addHttpListener(8765, "localhost")
-                .setHandler(Handlers.path()
+                .addHttpListener(8215, "localhost", Handlers.path()
                         .addPrefixPath("/", Handlers
                                 .websocket((WebSocketHttpExchange exchange, WebSocketChannel channel) -> {
-                                    users.add(WebsocketConnection.with(channel, 5000000L));
+                                    web.add(WebsocketConnection.with(channel, 5000000L));
+                                })))
+                .addHttpListener(8217, "localhost", Handlers.path()
+                        .addPrefixPath("/", Handlers
+                                .websocket((WebSocketHttpExchange exchange, WebSocketChannel channel) -> {
+                                    mturk.add(WebsocketConnection.with(channel, 5000000L));
                                 })))
                 .build();
         server.start();
@@ -36,18 +49,33 @@ public class ServerMain {
 
     // Test server code will go here
     private static void testServer() throws IOException {
-        Users users = Users.builder()
-                .maxUsers(2)
-                .dataRoot(Directory.local("C:\\Users\\Tyler\\Desktop\\server_test"))
+
+        Pool users = Pool.maxItems(4);
+
+        Study mturk = Study.builder()
+                .pool(users)
+                .dataRoot(Directory.local("C:\\Users\\Tyler\\Desktop\\server_test\\mturk"))
                 .sessions(ConfigurationFactory.experiment())
+                .codes(CodeFactory.uuid())
+                .build();
+
+        Study web = Study.builder()
+                .pool(users)
+                .dataRoot(Directory.local("C:\\Users\\Tyler\\Desktop\\server_test\\web"))
+                .sessions(ConfigurationFactory.experiment())
+                .codes(CodeFactory.uuid())
                 .build();
 
         Undertow server = Undertow.builder()
-                .addHttpListener(8765, "localhost")
-                .setHandler(Handlers.path()
+                .addHttpListener(8215, "localhost", Handlers.path()
                         .addPrefixPath("/", Handlers
                                 .websocket((WebSocketHttpExchange exchange, WebSocketChannel channel) -> {
-                                    users.add(WebsocketConnection.with(channel, 5000000L));
+                                    web.add(WebsocketConnection.with(channel, 5000000L));
+                                })))
+                .addHttpListener(8217, "localhost", Handlers.path()
+                        .addPrefixPath("/", Handlers
+                                .websocket((WebSocketHttpExchange exchange, WebSocketChannel channel) -> {
+                                    mturk.add(WebsocketConnection.with(channel, 5000000L));
                                 })))
                 .build();
         server.start();

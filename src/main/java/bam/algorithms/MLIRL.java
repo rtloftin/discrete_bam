@@ -263,9 +263,6 @@ public class MLIRL implements Agent {
     // A buffer for backpropagating teacher data
     private final double[][] jacobian;
 
-    // The transition data
-    private final List<StateTransition> transitions;
-
     // The task models
     private final HashMap<String, TaskModel> tasks;
 
@@ -296,9 +293,6 @@ public class MLIRL implements Agent {
 
         // Initialize task set
         tasks = new HashMap<>();
-
-        // Initialize transition set
-        transitions = new LinkedList<>();
     }
 
     @Override
@@ -334,7 +328,7 @@ public class MLIRL implements Agent {
     }
 
     @Override
-    public void observe(StateTransition transition) { transitions.add(transition); }
+    public void observe(StateTransition transition) { /* Does nothing, ignore transitions */ }
 
     @Override
     public Behavior integrate() {

@@ -1,4 +1,4 @@
-package bam.algorithms.new_variational;
+package bam.algorithms.alt.new_variational;
 
 import org.json.JSONException;
 import org.json.JSONObject;
