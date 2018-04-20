@@ -57,8 +57,7 @@ public class UserRecords implements Iterable<UserRecord> {
     public UserRecords concat(UserRecords... user_records) {
         List<UserRecord> concatenated = new ArrayList<>();
 
-        for(UserRecord record : users)
-            concatenated.add(record);
+        concatenated.addAll(users);
 
         for(UserRecords records : user_records)
             for(UserRecord record : records)

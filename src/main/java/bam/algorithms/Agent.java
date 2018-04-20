@@ -1,11 +1,7 @@
 package bam.algorithms;
 
-import org.json.JSONException;
-import org.json.JSONObject;
-
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Optional;
 
 /**
  * Represents a multitask learning

@@ -1,6 +1,4 @@
-package bam.domains;
-
-import bam.algorithms.*;
+package bam.algorithms;
 
 import java.util.concurrent.ThreadLocalRandom;
 
@@ -11,9 +9,6 @@ public class FiniteSimulation {
 
     // The agent
     private final Agent agent;
-
-    // The current task
-    private Task current_task;
 
     private int current_state;
     private int previous_state;
@@ -42,15 +37,9 @@ public class FiniteSimulation {
         previous_action = -1;
     }
 
-    public void reset() {
-        if(null != current_task)
-            setState(current_task.initial(ThreadLocalRandom.current()));
-    }
 
-    public void setTask(Task task) {
-        current_task = task;
-
-        agent.task(task.name());
+    public void setTask(String name) {
+        agent.task(name);
     }
 
     public void takeAction(int action, boolean on_task) {

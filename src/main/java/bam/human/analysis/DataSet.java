@@ -30,7 +30,7 @@ public class DataSet {
         List<UserRecord> users = new ArrayList<>();
 
         for(Path directory : user_directories)
-            UserRecord.load(directory, decoder).ifPresent((UserRecord user) -> users.add(user));
+            UserRecord.load(directory, decoder).ifPresent(users::add);
 
         return new DataSet(UserRecords.of(users));
     }

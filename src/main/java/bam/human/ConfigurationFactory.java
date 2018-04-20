@@ -6,6 +6,7 @@ import bam.algorithms.BAM;
 import bam.algorithms.Cloning;
 import bam.algorithms.ModelBased;
 import bam.algorithms.action.OldNormalizedActionModel;
+import bam.algorithms.feedback.ASABL;
 import bam.algorithms.optimization.Momentum;
 import bam.algorithms.planning.BoltzmannPlanner;
 import bam.algorithms.variational.PointDensity;
@@ -131,45 +132,6 @@ public class ConfigurationFactory implements Session.Factory {
 
     private ConfigurationFactory(HashMap<String, Domain> domains) { this.domains = domains; }
 
-    public static ConfigurationFactory test() {
-
-        // BAM algorithm
-        Algorithm bam = BAM.builder()
-                .taskSource(PointDensity.builder()
-                        .optimization(Momentum.with(0.01, 0.5)).build())
-                .dynamicsOptimization(Momentum.with(0.01, 0.5))
-                .planningAlgorithm(BoltzmannPlanner.algorithm( 1.0))
-                .actionModel(OldNormalizedActionModel.beta(1.0))
-                .taskUpdates(20)
-                .dynamicsUpdates(20)
-                .emUpdates(10)
-                .useTransitions(true)
-                .build();
-
-        // Grid world tutorial domain and expert agent
-        GridWorld grid_tutorial = GridWorlds.tutorial();
-        Algorithm grid_expert = Experts.algorithm(grid_tutorial);
-
-        Layout grid_layout = new Layout("tutorial", RemoteGridWorld.with(grid_tutorial), bam, grid_expert);
-        Domain grid_world = new Domain("grid world", grid_layout);
-
-        // Gravity world tutorial domain and expert agent
-        GravityWorld gravity_tutorial = GravityWorlds.tutorial();
-        Algorithm gravity_expert = Experts.algorithm(gravity_tutorial);
-
-        Layout gravity_layout = new Layout("tutorial", RemoteGravityWorld.with(gravity_tutorial), bam, gravity_expert);
-        Domain gravity_world = new Domain("gravity world", gravity_layout);
-
-        // Farm world tutorial domain and expert agent
-        FarmWorld farm_tutorial = FarmWorlds.tutorial();
-        Algorithm farm_expert = Experts.algorithm(farm_tutorial);
-
-        Layout farm_layout = new Layout("tutorial", RemoteFarmWorld.with(farm_tutorial), bam, farm_expert);
-        Domain farm_world = new Domain("farm world", farm_layout);
-
-        return new ConfigurationFactory(grid_world, gravity_world, farm_world);
-    }
-
     public static ConfigurationFactory experiment() {
 
         // Algorithms - BAM, Model Based, Cloning
@@ -179,6 +141,7 @@ public class ConfigurationFactory implements Session.Factory {
                 .dynamicsOptimization(Momentum.with(0.1, 0.5))
                 .planningAlgorithm(BoltzmannPlanner.algorithm( 1.0))
                 .actionModel(OldNormalizedActionModel.beta(1.0))
+                .feedbackModel(ASABL.builder().build())
                 .taskUpdates(20)
                 .dynamicsUpdates(20)
                 .emUpdates(10)
@@ -191,6 +154,7 @@ public class ConfigurationFactory implements Session.Factory {
                 .dynamicsOptimization(Momentum.with(0.1, 0.5))
                 .planningAlgorithm(BoltzmannPlanner.algorithm(1.0))
                 .actionModel(OldNormalizedActionModel.beta(1.0))
+                .feedbackModel(ASABL.builder().build())
                 .taskUpdates(200)
                 .dynamicsUpdates(200)
                 .build();
@@ -209,6 +173,7 @@ public class ConfigurationFactory implements Session.Factory {
         Layout grid_layout = new Layout("tutorial", RemoteGridWorld.with(grid_tutorial), grid_expert);
         Layout two_rooms = new Layout("two-rooms", RemoteGridWorld.with(GridWorlds.twoRooms()), bam, model, cloning);
         Layout doors = new Layout("doors", RemoteGridWorld.with(GridWorlds.doors()), bam, model, cloning);
+
         Domain grid_world = new Domain("grid world", grid_layout, two_rooms, doors);
 
         // Farm World Domain
@@ -217,8 +182,9 @@ public class ConfigurationFactory implements Session.Factory {
 
         Layout farm_layout = new Layout("tutorial", RemoteFarmWorld.with(farm_tutorial), farm_expert);
         Layout two_fields = new Layout("two-fields", RemoteFarmWorld.with(FarmWorlds.twoFields()), bam, model, cloning);
-        Layout six_fields = new Layout("six-fields", RemoteFarmWorld.with(FarmWorlds.sixFields()), bam, model, cloning);
-        Domain farm_world = new Domain("farm world", farm_layout, two_fields, six_fields);
+        Layout three_fields = new Layout("three-fields", RemoteFarmWorld.with(FarmWorlds.threeFields()), bam, model, cloning);
+
+        Domain farm_world = new Domain("farm world", farm_layout, two_fields, three_fields);
 
         return new ConfigurationFactory(grid_world, farm_world);
     }

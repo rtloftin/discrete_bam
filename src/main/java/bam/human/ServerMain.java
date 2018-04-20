@@ -63,6 +63,7 @@ public class ServerMain {
                 .pool(users)
                 .dataRoot(Directory.local("C:\\Users\\Tyler\\Desktop\\server_test\\web"))
                 .sessions(ConfigurationFactory.experiment())
+                .codes(CodeFactory.uuid())
                 .build();
 
         Undertow server = Undertow.builder()

@@ -1,8 +1,6 @@
 package bam.human.analysis;
 
 import bam.algorithms.Behavior;
-import bam.domains.RandomBehavior;
-import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
@@ -56,14 +54,18 @@ public interface SessionStatistic<T> {
             for(JSONObject event : session.events) {
                 String type = event.getString("type");
 
-                if(type.equals("start")) {
-                    current_task = event.getJSONObject("response").getJSONObject("layout")
-                            .getJSONObject("task").getString("name");
-                } else if(type.equals("task")) {
-                    current_task = event.getJSONObject("data").getString("name");
-                } else if(type.equals("take-action")) {
-                    if(null != current_task && event.getJSONObject("data").getBoolean("on-task"))
-                        tasks.add(current_task);
+                switch (type) {
+                    case "start":
+                        current_task = event.getJSONObject("response").getJSONObject("layout")
+                                .getJSONObject("task").getString("name");
+                        break;
+                    case "task":
+                        current_task = event.getJSONObject("data").getString("name");
+                        break;
+                    case "take-action":
+                        if (null != current_task && event.getJSONObject("data").getBoolean("on-task"))
+                            tasks.add(current_task);
+                        break;
                 }
             }
 

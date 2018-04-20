@@ -78,7 +78,7 @@ public class FarmWorlds {
     public static FarmWorld twoFields() {
 
         // Initialize navigation grid
-        NavGrid grid = new NavGrid(8, 8, NavGrid.FOUR);
+        NavGrid grid = new NavGrid(8, 11, NavGrid.FOUR);
 
         // Set terrain
         Terrain[][] map = new Terrain[grid.height()][grid.width()];
@@ -104,14 +104,61 @@ public class FarmWorlds {
         for(int row = 0; row < grid.height(); ++row)
             Arrays.fill(machines[row], Machine.NONE);
 
-        machines[6][2] = Machine.PLOW;
-        machines[6][5] = Machine.HARVESTER;
+        machines[4][2] = Machine.HARVESTER;
+        machines[4][5] = Machine.SPRINKLER;
+        machines[9][3] = Machine.PLOW;
+
 
         FarmWorld environment = new FarmWorld("two-fields", grid, map, machines);
 
         // Build environment
         environment.addGoal("Soil", 1,1,2,2);
         environment.addGoal("Crops", 1,5,2,2);
+
+        return environment;
+    }
+
+    public static FarmWorld threeFields() {
+
+        // Initialize navigation grid
+        NavGrid grid = new NavGrid(8, 11, NavGrid.FOUR);
+
+        // Set terrain
+        Terrain[][] map = new Terrain[grid.height()][grid.width()];
+
+        for(int row = 0; row < grid.height(); ++row)
+            Arrays.fill(map[row], Terrain.DIRT);
+
+        // Soil
+        map[1][1] = Terrain.SOIL;
+        map[1][2] = Terrain.SOIL;
+        map[2][1] = Terrain.SOIL;
+        map[2][2] = Terrain.SOIL;
+
+        map[8][1] = Terrain.SOIL;
+        map[8][2] = Terrain.SOIL;
+        map[9][1] = Terrain.SOIL;
+        map[9][2] = Terrain.SOIL;
+
+        // Grass
+        map[1][5]  = Terrain.GRASS;
+        map[1][6] = Terrain.GRASS;
+        map[2][5]  = Terrain.GRASS;
+        map[2][6] = Terrain.GRASS;
+
+        // Set machines
+        Machine[][] machines = new Machine[grid.height()][grid.width()];
+
+        for(int row = 0; row < grid.height(); ++row)
+            Arrays.fill(machines[row], Machine.NONE);
+
+        machines[4][2] = Machine.SPRINKLER;
+        machines[9][5] = Machine.PLOW;
+
+        FarmWorld environment = new FarmWorld("three-fields", grid, map, machines);
+
+        // Build environment
+        environment.addGoal("Soil", 1,1,2,2);
 
         return environment;
     }

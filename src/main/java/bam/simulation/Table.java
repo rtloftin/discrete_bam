@@ -3,10 +3,7 @@ package bam.simulation;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintStream;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.LinkedList;
-import java.util.List;
+import java.util.*;
 
 /**
  * A table that is generated row by row. This
@@ -27,7 +24,7 @@ public class Table {
     }
 
     public static Table create(String name, List<String> columns) {
-        return create(name, columns.toArray(new String[columns.size()]));
+        return create(name, columns.toArray(new String[0]));
     }
 
     public static Table create(String name, String... columns) {
@@ -65,8 +62,7 @@ public class Table {
         }
 
         public Row add(String... values) {
-            for(String value : values)
-                entries.add(value);
+            Collections.addAll(entries, values);
 
             return this;
         }

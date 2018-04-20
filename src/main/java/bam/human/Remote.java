@@ -1,7 +1,6 @@
 package bam.human;
 
 import bam.algorithms.Algorithm;
-import bam.domains.Environment;
 import bam.domains.farm_world.FarmWorld;
 import bam.domains.gravity_world.GravityWorld;
 import bam.domains.grid_world.GridWorld;

@@ -1,4 +1,4 @@
-package bam.algorithms.new_optimization;
+package bam.algorithms.alt.new_optimization;
 
 import org.json.JSONException;
 import org.json.JSONObject;

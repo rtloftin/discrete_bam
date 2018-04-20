@@ -40,12 +40,11 @@ public class SessionRecords implements Iterable<SessionRecord> {
     public SessionRecords concat(SessionRecords... session_records) {
         List<SessionRecord> concatenated = new ArrayList<>();
 
-        for(SessionRecord record : sessions)
-            concatenated.add(record);
+        concatenated.addAll(sessions);
 
         for(SessionRecords records : session_records)
             for(SessionRecord record : records)
-                concatenated.add(record);
+                concatenated.add(record); // Might want to expose list to allow addAll()
 
         return new SessionRecords(concatenated);
     }

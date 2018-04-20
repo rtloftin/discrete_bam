@@ -164,7 +164,7 @@ public class FarmWorld implements Environment {
                 .put("grid", grid.serialize())
                 .put("map", map)
                 .put("machines", machines)
-                .put("tasks", tasks);
+                .put("tasks", json_tasks);
     }
 
     public static FarmWorld load(JSONObject config) throws JSONException {

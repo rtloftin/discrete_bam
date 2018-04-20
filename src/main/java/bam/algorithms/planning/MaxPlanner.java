@@ -4,7 +4,6 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.Arrays;
-import java.util.function.Consumer;
 
 /**
  * A planner which uses optimal value iteration.

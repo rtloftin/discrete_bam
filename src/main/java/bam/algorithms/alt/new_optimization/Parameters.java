@@ -1,4 +1,4 @@
-package bam.algorithms.new_optimization;
+package bam.algorithms.alt.new_optimization;
 
 /**
  * Represents a vector of parameters that may be optimized

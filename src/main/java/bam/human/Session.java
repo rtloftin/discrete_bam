@@ -9,7 +9,6 @@ import org.json.JSONObject;
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
-import java.io.PrintStream;
 
 public class Session {
 
@@ -132,7 +131,7 @@ public class Session {
                 record("feedback")
                         .put("feedback", message.data());
 
-                message.respond(new JSONObject());
+                message.respond();
             } catch(JSONException e) {
                 debug.write("ERROR: json exception");
                 message.error("json error");
@@ -161,7 +160,7 @@ public class Session {
                 record("integrate")
                         .put("behavior", remote.integrate());
 
-                message.respond(new JSONObject());
+                message.respond();
             } catch(JSONException e) {
                 debug.write("ERROR: json exception");
                 message.error("json error");

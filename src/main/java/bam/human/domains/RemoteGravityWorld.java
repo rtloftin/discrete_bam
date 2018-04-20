@@ -2,9 +2,7 @@ package bam.human.domains;
 
 import bam.algorithms.Agent;
 import bam.algorithms.Algorithm;
-import bam.algorithms.StateTransition;
-import bam.algorithms.TeacherAction;
-import bam.domains.FiniteSimulation;
+import bam.algorithms.FiniteSimulation;
 import bam.domains.NavGrid;
 import bam.domains.Task;
 import bam.domains.gravity_world.Colors;
@@ -16,6 +14,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.concurrent.ThreadLocalRandom;
+
 
 public class RemoteGravityWorld implements Remote {
 
@@ -43,7 +42,7 @@ public class RemoteGravityWorld implements Remote {
             setTask(initial.getJSONObject("task"));
         else {
             current_task = environment.tasks().get(0);
-            simulation.setTask(current_task);
+            simulation.setTask(current_task.name());
         }
 
         // Set initial state
@@ -93,7 +92,7 @@ public class RemoteGravityWorld implements Remote {
                     current_task = next_task;
 
                     // Set the new task
-                    simulation.setTask(current_task);
+                    simulation.setTask(current_task.name());
 
                     // Stop on the first task with this name
                     break;
@@ -113,9 +112,9 @@ public class RemoteGravityWorld implements Remote {
 
     @Override
     public synchronized void resetState() {
-        simulation.reset();
+        int state = current_task.initial(ThreadLocalRandom.current());
+        simulation.setState(state);
 
-        int state = simulation.getState();
         int row_offset = environment.row(state) - (environment.height() / 2);
         int column_offset = environment.column(state) - (environment.width() / 2);
 
@@ -144,21 +143,23 @@ public class RemoteGravityWorld implements Remote {
         String action_type = action.getString("type");
         int action_index = NavGrid.STAY;
 
-        if(action_type.equals("up")) {
-            action_index = NavGrid.UP;
-            direction = "up";
-        }
-        else if(action_type.equals("down")) {
-            action_index = NavGrid.DOWN;
-            direction = "down";
-        }
-        else if(action_type.equals("left")) {
-            action_index = NavGrid.LEFT;
-            direction = "left";
-        }
-        else if(action_type.equals("right")) {
-            action_index = NavGrid.RIGHT;
-            direction = "right";
+        switch (action_type) {
+            case "up":
+                action_index = NavGrid.UP;
+                direction = "up";
+                break;
+            case "down":
+                action_index = NavGrid.DOWN;
+                direction = "down";
+                break;
+            case "left":
+                action_index = NavGrid.LEFT;
+                direction = "left";
+                break;
+            case "right":
+                action_index = NavGrid.RIGHT;
+                direction = "right";
+                break;
         }
 
         // Take action

@@ -97,17 +97,17 @@ public class ASABL implements FeedbackModel {
 
     @Override
     public double feedback(int action, double[] values, Random random) {
-        double adv = advantage_model.advantage(action, values);
+        double sig = 1.0 / (1.0 + Math.exp(-alpha * advantage_model.advantage(action, values)));
         double rand = random.nextDouble();
 
         // Check for positive
-        double total = (1.0 - mu_plus) * (epsilon + (1.0 - 2.0 * epsilon) / (1.0 - Math.exp(-alpha * adv)));
+        double total = (1.0 - mu_plus) * (epsilon + (1.0 - 2.0 * epsilon) * sig);
 
         if(rand <= total)
             return 1.0;
 
         // Check for negative
-        total += (1.0 - mu_minus) * (epsilon + (1.0 - 2.0 * epsilon) / (1.0 - Math.exp(alpha * adv)));
+        total += (1.0 - mu_minus) * (epsilon + (1.0 - 2.0 * epsilon) * (1.0 - sig));
 
         if(rand <= total)
             return -1.0;
@@ -118,27 +118,21 @@ public class ASABL implements FeedbackModel {
 
     @Override
     public void gradient(double feedback, int action, double[] values, double[] gradient, double weight) {
-        double adv = advantage_model.advantage(action, values);
-        double n = Math.exp(-alpha * adv);
-        double p = Math.exp(alpha * adv);
-        double derivative;
+        double sig = 1.0 / (1.0 + Math.exp(-alpha * advantage_model.advantage(action, values)));
+        double err = 1.0 - (2.0 * epsilon);
+        double derivative = alpha * sig * (1.0 - sig);
 
-        if(0.0 < feedback)
-            derivative = alpha * (1.0 - 2.0 * epsilon) / (1.0 + epsilon * n + (1.0 - epsilon) * p);
-        else if(0.0 > feedback)
-            derivative = -alpha * (1.0 - 2.0 * epsilon) / (1.0 + epsilon * p + (1.0 - epsilon) * n);
-        else {
-            double a = p * (mu_plus * (1.0 - epsilon) + mu_minus * epsilon);
-            double b = n * (mu_minus * (1.0 - epsilon) + mu_plus * epsilon);
-
-            double top = alpha * (1.0 - 2.0 * epsilon) * (mu_plus - mu_minus);
-            double bottom = mu_plus + mu_minus + a + b;
-
-            derivative = top / bottom;
+        if(0.0 < feedback) {
+            derivative *= err / (epsilon + err * sig);
+        } else if(0.0 > feedback) {
+            derivative *= -err / (epsilon + err * (1.0 - sig));
+        } else {
+            derivative *= err * (mu_plus - mu_minus);
+            derivative /= ( (mu_plus * (epsilon + (err * sig) ) ) + (mu_minus * (epsilon + (err * (1.0 - sig) ) ) ) );
         }
 
-        if(!Double.isFinite(derivative))
-            throw new RuntimeException("ASABL model encountered infinity");
+        // if(!Double.isFinite(derivative))
+           // throw new RuntimeException("ASABL model encountered infinity");
 
         advantage_model.gradient(action, values, gradient, weight * derivative);
     }
@@ -150,7 +144,7 @@ public class ASABL implements FeedbackModel {
      */
     @Override
     public String name() {
-        return "ASABL";
+        return "A-SABL";
     }
 
     /**

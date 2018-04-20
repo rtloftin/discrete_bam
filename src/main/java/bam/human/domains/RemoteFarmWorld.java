@@ -2,9 +2,7 @@ package bam.human.domains;
 
 import bam.algorithms.Agent;
 import bam.algorithms.Algorithm;
-import bam.algorithms.StateTransition;
-import bam.algorithms.TeacherAction;
-import bam.domains.FiniteSimulation;
+import bam.algorithms.FiniteSimulation;
 import bam.domains.NavGrid;
 import bam.domains.Task;
 import bam.domains.farm_world.FarmWorld;
@@ -42,7 +40,7 @@ public class RemoteFarmWorld implements Remote {
             setTask(initial.getJSONObject("task"));
         else {
             current_task = environment.tasks().get(0);
-            simulation.setTask(current_task);
+            simulation.setTask(current_task.name());
         }
 
         // Set initial state
@@ -92,7 +90,7 @@ public class RemoteFarmWorld implements Remote {
                     current_task = next_task;
 
                     // Set the new task
-                    simulation.setTask(current_task);
+                    simulation.setTask(current_task.name());
 
                     // Stop on the first task with this name
                     break;
@@ -111,7 +109,7 @@ public class RemoteFarmWorld implements Remote {
 
     @Override
     public synchronized void resetState() {
-        simulation.reset();
+        simulation.setState(current_task.initial(ThreadLocalRandom.current()));
     }
 
     @Override
@@ -121,14 +119,19 @@ public class RemoteFarmWorld implements Remote {
         String action_type = action.getString("type");
         int action_index = NavGrid.STAY;
 
-        if(action_type.equals("up")) {
-            action_index = NavGrid.UP;
-        } else if(action_type.equals("down")) {
-            action_index = NavGrid.DOWN;
-        } else if(action_type.equals("left")) {
-            action_index = NavGrid.LEFT;
-        } else if(action_type.equals("right")) {
-            action_index = NavGrid.RIGHT;
+        switch (action_type) {
+            case "up":
+                action_index = NavGrid.UP;
+                break;
+            case "down":
+                action_index = NavGrid.DOWN;
+                break;
+            case "left":
+                action_index = NavGrid.LEFT;
+                break;
+            case "right":
+                action_index = NavGrid.RIGHT;
+                break;
         }
 
         // Take action

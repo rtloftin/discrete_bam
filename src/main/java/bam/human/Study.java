@@ -1,10 +1,10 @@
 package bam.human;
 
+import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.IOException;
 import java.io.PrintStream;
-import java.util.LinkedList;
-import java.util.List;
 import java.util.Optional;
 
 /**
@@ -41,13 +41,17 @@ class Study {
 
             // Log client message
             connection.listen().add("log", (Connection.Message message) -> {
-                log.write("CLIENT: " + message.data().optString("text", "no log message"));
+                log.write("LOG-CLIENT: " + message.data().optString("text", "no log message"));
             }).add("error", (Connection.Message message) -> {
                 log.write("ERROR-CLIENT: " + message.data().optString("text", "no error message"));
             }).add("code", (Connection.Message message) -> {
                 log.write("CODE REQUESTED");
 
-                message.respond(new JSONObject().put("code", code)); // Might need error handling here
+                try {
+                    message.respond(new JSONObject().put("value", code));
+                } catch(JSONException e) {
+                    log.write("ERROR: " + e.getMessage());
+                }
             }).add("start-session", (Connection.Message message) -> {
                 if(null != current_session) {
                     log.write("ERROR: previous session not closed");
@@ -65,20 +69,29 @@ class Study {
                 }
             }).add("end-session", (Connection.Message message) -> {
                 if(null != current_session) {
-                    current_session.end("finished");
-                    current_session = null;
+                    try {
+                        current_session.end("finished");
+                        current_session = null;
 
-                    message.respond();
-
-                    log.write("SESSION: user ended session");
+                        message.respond();
+                        log.write("SESSION: user ended session");
+                    } catch(Exception e) {
+                        log.write("ERROR: could not end session - " + e.getMessage());
+                        message.error("server error");
+                    }
                 }
             }).add("complete", (Connection.Message message) -> {
-                log.write("COMPLETE");
+                log.write("CLIENT COMPLETE");
             });
 
             connection.open((String reason) -> {
-                if(null != current_session)
-                    current_session.end(reason);
+                if(null != current_session) {
+                    try {
+                        current_session.end(reason);
+                    } catch(Exception e) {
+                        log.write("ERROR: could not end session - " + e.getMessage());
+                    }
+                }
 
                 log.write("CONNECTION CLOSED: " + reason);
                 log.close();
@@ -122,7 +135,7 @@ class Study {
             return this;
         }
 
-        public Study build() {
+        public Study build() throws IOException {
             if(null == directory)
                 throw new RuntimeException("No root directory defined for user data");
             if(null == sessions)
@@ -142,30 +155,46 @@ class Study {
     private final Session.Factory sessions;
     private final CodeFactory codes;
 
+    private Log log;
+
     private Study(Builder builder) {
         this.pool = builder.pool;
         this.directory = builder.directory;
         this.sessions = builder.sessions;
         this.codes = builder.codes;
+
+        // Start study-wide log
+        try {
+            log = Log.create(directory.stream("codes"));
+        } catch(IOException e) {
+            log = Log.dummy();
+        }
+
+        log.write("log started");
     }
 
-    void add(Connection connection) {
+    void add(Connection connection){
 
         // Check if we have too many users already
-        if(pool.full())
+        if(pool.full()) {
             connection.refuse("busy");
+            log.write("refuse user, too busy");
+        }
 
-        // Check if we have any codes left
+        // Get the next verification code
         Optional<String> code = codes.nextCode();
 
-        if(!code.isPresent())
-            connection.refuse("no verification code available");
-
-        // Try to create the user
-        try {
-            pool.add(this.new User(connection, directory.unique("users"), code.get()));
-        } catch(Exception e) {
-            connection.refuse(e.getMessage());
+        if(code.isPresent()) {
+            try {
+                pool.add(this.new User(connection, directory.unique("users"), code.get()));
+                log.write("added user, code: " + code.get());
+            } catch (Exception e) { // What kinds of exceptions can occur here?
+                connection.refuse(e.getMessage());
+                log.write("refused user, error: " + e.getMessage());
+            }
+        } else {
+            connection.refuse("codes exhausted");
+            log.write("refused user, codes exhausted");
         }
     }
 }
