@@ -417,7 +417,7 @@ public class MultiTaskFeedbackExperiment {
 
         for(Environment environment : environments) {
             File env_root = new File(root, environment.name());
-            env_root.mkdir();
+            env_root.mkdirs();
 
             experiments.add(pool.submit(() -> experiment(environment, env_root, log)));
         }

@@ -37,8 +37,10 @@ public class NormalizedActionModel implements ActionModel {
         // Compute standard deviation
         double variance = 0.0;
 
-        for(int action = 0; action < values.length; ++action)
-            variance += (mean - values[action]) * (mean - values[action]);
+        for(int action = 0; action < values.length; ++action) {
+            double delta = mean - values[action];
+            variance += delta * delta;
+        }
 
         double deviation = (0.0 == variance) ? 1.0 : Math.sqrt(variance / values.length);
 
@@ -47,7 +49,7 @@ public class NormalizedActionModel implements ActionModel {
         double[] policy = new double[values.length];
 
         for(int action = 0; action < values.length; ++action) {
-            policy[action] = Math.exp(beta * values[action] / deviation);
+            policy[action] = Math.exp(beta * (values[action] - values[0]) / deviation);
             partition += policy[action];
         }
 
@@ -64,52 +66,54 @@ public class NormalizedActionModel implements ActionModel {
         // Compute mean
         double mean = 0.0;
 
-        for(int i=0; i < values.length; ++i)
-            mean += values[i];
+        for(int a = 0; a < values.length; ++a)
+            mean += values[a];
 
         mean /= values.length;
 
         // Compute standard deviation
         double variance = 0.0;
 
-        for(int i=0; i < values.length; ++i)
-            variance += (mean - values[i]) * (mean - values[i]);
+        for(int a = 0; a < values.length; ++a) {
+            double delta = mean - values[a];
+            variance += delta * delta;
+        }
 
-        double deviation = (0.0 == variance) ? 1.0 : Math.sqrt(variance / values.length);
+        variance = (0.0 == variance) ? 1.0 : (variance / values.length);
+        double deviation = Math.sqrt(variance);
 
         // Compute policy
         double partition = 0.0;
         double[] policy = new double[values.length];
 
-        for(int i=0; i < values.length; ++i) {
-            policy[i] = Math.exp(beta * values[i] / deviation);
-            partition += policy[i];
+        for(int a = 0; a < values.length; ++a) {
+            policy[a] = Math.exp(beta * (values[a] - values[0]) / deviation);
+            partition += policy[a];
         }
 
-        for(int i=0; i < values.length; ++i)
-            policy[i] /= partition;
+        for(int a = 0; a < values.length; ++a)
+            policy[a] /= partition;
 
         // compute gradients
-        for(int i=0; i < values.length; ++i) {
-            double sigma = (values[i] - mean) / (deviation * values.length);
-            double delta;
+        for(int a = 0; a < values.length; ++a) {
+            double sigma = (values[a] - mean) / (values.length * deviation);
+            double derivative;
 
-            if(action == i) {
-                delta = beta * (1.0 - policy[action]) * (deviation - values[action] * sigma) / (deviation * deviation);
-
-                for(int j=0; j < values.length; ++j)
-                    if(j != action)
-                        delta -= beta * policy[j] * values[j] * sigma / (deviation * deviation);
+            if(action == a) {
+                derivative = beta * (deviation - (values[action] * sigma) ) / variance;
             } else {
-                delta = beta * (1.0 - policy[action]) * values[action] * sigma / (deviation * deviation);
-                delta -= beta * policy[i] * (deviation - values[i] * sigma) / (deviation * deviation);
-
-                for(int j=0; j < values.length; ++j)
-                    if(j != action && j != i)
-                        delta -= beta * policy[j] * values[j] * sigma / (deviation * deviation);
+                derivative = -beta * values[action] * sigma / variance;
             }
 
-            gradient[i] += weight * delta;
+            for(int b = 0; b < values.length; ++b) {
+                if(a == b) {
+                    derivative -= beta * policy[b] * (deviation - (values[b] * sigma) ) / variance;
+                } else {
+                    derivative += beta * policy[b] * values[b] * sigma / variance;
+                }
+            }
+
+            gradient[a] += weight * derivative;
         }
     }
 

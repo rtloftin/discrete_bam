@@ -357,8 +357,7 @@ public class MultiTaskDemoExperiment {
     public void run(File root) throws Exception {
 
         // Initialize data directory
-        if(!root.mkdirs())
-            throw new Exception("Could not create data directory");
+        root.mkdirs();
 
         // Initialize log
         Log log = Log.combined(new File(root, "log"));
@@ -401,9 +400,7 @@ public class MultiTaskDemoExperiment {
 
         for(Environment environment : environments) {
             File env_root = new File(root, environment.name());
-
-            if(!env_root.mkdir())
-                throw new Exception("Could not create data directory");
+            env_root.mkdirs();
 
             experiments.add(pool.submit(() -> experiment(environment, env_root, log)));
         }

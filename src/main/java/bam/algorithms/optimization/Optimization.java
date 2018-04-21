@@ -71,6 +71,8 @@ public interface Optimization {
             return GradientAscent.load(config);
         else if(className.equals(Momentum.class.getSimpleName()))
             return Momentum.load(config);
+        else if(className.equals(ClippedMomentum.class.getSimpleName()))
+            return ClippedMomentum.load(config);
         else if(className.equals(AdaGrad.class.getSimpleName()))
             return AdaGrad.load(config);
         else if(className.equals(RmsProp.class.getSimpleName()))

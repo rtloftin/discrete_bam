@@ -24,12 +24,14 @@ public class ServerMain {
                 .pool(users)
                 .dataRoot(Directory.local(Paths.get(System.getProperty("user.home")).resolve("web")))
                 .sessions(ConfigurationFactory.experiment())
+                .codes(CodeFactory.uuid())
                 .build();
 
         Study mturk = Study.builder()
                 .pool(users)
                 .dataRoot(Directory.local(Paths.get(System.getProperty("user.home")).resolve("mturk")))
                 .sessions(ConfigurationFactory.experiment())
+                .codes(CodeFactory.uuid())
                 .build();
 
         Undertow server = Undertow.builder()

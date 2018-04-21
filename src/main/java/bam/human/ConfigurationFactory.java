@@ -5,8 +5,10 @@ import bam.algorithms.Algorithm;
 import bam.algorithms.BAM;
 import bam.algorithms.Cloning;
 import bam.algorithms.ModelBased;
+import bam.algorithms.action.NormalizedActionModel;
 import bam.algorithms.action.OldNormalizedActionModel;
 import bam.algorithms.feedback.ASABL;
+import bam.algorithms.optimization.ClippedMomentum;
 import bam.algorithms.optimization.Momentum;
 import bam.algorithms.planning.BoltzmannPlanner;
 import bam.algorithms.variational.PointDensity;
@@ -137,10 +139,10 @@ public class ConfigurationFactory implements Session.Factory {
         // Algorithms - BAM, Model Based, Cloning
         Algorithm bam = BAM.builder()
                 .taskSource(PointDensity.builder()
-                        .optimization(Momentum.with(0.01, 0.5)).build())
-                .dynamicsOptimization(Momentum.with(0.1, 0.5))
+                        .optimization(ClippedMomentum.with(0.01, 0.5, 0.2)).build())
+                .dynamicsOptimization(ClippedMomentum.with(0.1, 0.5, 0.2))
                 .planningAlgorithm(BoltzmannPlanner.algorithm( 1.0))
-                .actionModel(OldNormalizedActionModel.beta(1.0))
+                .actionModel(NormalizedActionModel.beta(1.0))
                 .feedbackModel(ASABL.builder().build())
                 .taskUpdates(20)
                 .dynamicsUpdates(20)
@@ -150,10 +152,10 @@ public class ConfigurationFactory implements Session.Factory {
 
         Algorithm model = ModelBased.builder()
                 .taskSource(PointDensity.builder()
-                        .optimization(Momentum.with(0.01, 0.5)).build())
-                .dynamicsOptimization(Momentum.with(0.1, 0.5))
+                        .optimization(ClippedMomentum.with(0.01, 0.5, 0.2)).build())
+                .dynamicsOptimization(ClippedMomentum.with(0.1, 0.5, 0.2))
                 .planningAlgorithm(BoltzmannPlanner.algorithm(1.0))
-                .actionModel(OldNormalizedActionModel.beta(1.0))
+                .actionModel(NormalizedActionModel.beta(1.0))
                 .feedbackModel(ASABL.builder().build())
                 .taskUpdates(200)
                 .dynamicsUpdates(200)
@@ -161,8 +163,8 @@ public class ConfigurationFactory implements Session.Factory {
 
         Algorithm cloning = Cloning.builder()
                 .taskSource(PointDensity.builder()
-                        .optimization(Momentum.with(0.01, 0.5)).build())
-                .actionModel(OldNormalizedActionModel.beta(1.0))
+                        .optimization(ClippedMomentum.with(0.01, 0.5, 0.2)).build())
+                .actionModel(NormalizedActionModel.beta(1.0))
                 .numUpdates(200)
                 .build();
 
