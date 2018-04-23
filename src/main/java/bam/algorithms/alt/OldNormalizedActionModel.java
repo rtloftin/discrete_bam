@@ -1,5 +1,6 @@
-package bam.algorithms.action;
+package bam.algorithms.alt;
 
+import bam.algorithms.action.ActionModel;
 import org.json.JSONException;
 import org.json.JSONObject;
 

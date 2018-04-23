@@ -1,5 +1,6 @@
 package bam.algorithms.action;
 
+import bam.algorithms.alt.OldNormalizedActionModel;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -103,7 +104,9 @@ public interface ActionModel {
             return GreedyActionModel.load(config);
         else if(className.equals(BoltzmannActionModel.class.getSimpleName()))
             return BoltzmannActionModel.load(config);
-        else if(className.equals(OldNormalizedActionModel.class.getSimpleName()))
+        else if(className.equals(NormalizedActionModel.class.getSimpleName()))
+            return NormalizedActionModel.load(config);
+        else if(className.equals(bam.algorithms.alt.OldNormalizedActionModel.class.getSimpleName()))
             return OldNormalizedActionModel.load(config);
 
         throw new RuntimeException("Unknown Implementation of 'ActionModel' requested");

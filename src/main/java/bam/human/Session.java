@@ -126,10 +126,15 @@ public class Session {
             try {
                 debug.write("user feedback");
 
+                JSONObject state = remote.getState();
+                JSONObject action = remote.getAction();
+
                 remote.giveFeedback(message.data());
 
                 record("feedback")
-                        .put("feedback", message.data());
+                        .put("feedback", message.data())
+                        .put("state", state)
+                        .put("action", action);
 
                 message.respond();
             } catch(JSONException e) {

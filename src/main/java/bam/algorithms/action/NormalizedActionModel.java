@@ -91,6 +91,11 @@ public class NormalizedActionModel implements ActionModel {
             partition += policy[a];
         }
 
+        if(!Double.isFinite(partition)) {
+            System.err.println("Numerical error encountered");
+            System.exit(1);
+        }
+
         for(int a = 0; a < values.length; ++a)
             policy[a] /= partition;
 

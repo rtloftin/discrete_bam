@@ -11,7 +11,7 @@ import bam.domains.gravity_world.GravityWorlds;
 import bam.algorithms.*;
 import bam.algorithms.optimization.Momentum;
 import bam.domains.grid_world.GridWorlds;
-import bam.algorithms.action.OldNormalizedActionModel;
+import bam.algorithms.alt.OldNormalizedActionModel;
 import bam.algorithms.variational.PointDensity;
 
 import java.io.File;

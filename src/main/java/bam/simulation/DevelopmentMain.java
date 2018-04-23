@@ -6,7 +6,7 @@ import bam.algorithms.Cloning;
 import bam.algorithms.ModelBased;
 import bam.algorithms.action.ActionModel;
 import bam.algorithms.action.NormalizedActionModel;
-import bam.algorithms.action.OldNormalizedActionModel;
+import bam.algorithms.alt.OldNormalizedActionModel;
 import bam.algorithms.feedback.ASABL;
 import bam.algorithms.feedback.FeedbackModel;
 import bam.algorithms.optimization.ClippedMomentum;
@@ -181,12 +181,15 @@ public class DevelopmentMain {
         Environment two_rooms = GridWorlds.twoRooms();
         Environment doors = GridWorlds.doors();
 
+        Environment two_fields = FarmWorlds.twoFields();
+        Environment three_fields = FarmWorlds.threeFields();
+
         // Action Model
         ActionModel action_model = NormalizedActionModel.beta(1.0);
 
         // Task source
         Variational task_source = PointDensity.builder()
-                .optimization(ClippedMomentum.with(0.01, 0.5, 0.2))
+                .optimization(ClippedMomentum.with(0.1, 0.5, 0.5))
                 // .optimization(Adam.with(0.01, 0.8, 0.8, 0.05))
                 .build();
 
@@ -196,7 +199,7 @@ public class DevelopmentMain {
         // Initialize BAM algorithms
         Algorithm bam = BAM.builder()
                 .taskSource(task_source)
-                .dynamicsOptimization(ClippedMomentum.with(0.01, 0.5, 0.2))
+                .dynamicsOptimization(ClippedMomentum.with(0.1, 0.5, 1))
                 // .dynamicsOptimization(Momentum.with(0.01, 0.5))
                 // .dynamicsOptimization(AdaGrad.with(1.0, 0.7))
                 // .dynamicsOptimization(Adam.with(0.01, 0.8, 0.8, 0.05))
@@ -211,7 +214,7 @@ public class DevelopmentMain {
         // Initialize model-based algorithms
         Algorithm model = ModelBased.builder()
                 .taskSource(task_source)
-                .dynamicsOptimization(ClippedMomentum.with(0.01, 0.5, 0.2))
+                .dynamicsOptimization(ClippedMomentum.with(0.1, 0.5, 1))
                 // .dynamicsOptimization(AdaGrad.with(1.0, 0.7))
                 // .dynamicsOptimization(Adam.with(0.01, 0.8, 0.8, 0.05))
                 .planningAlgorithm(BoltzmannPlanner.algorithm(1.0))
@@ -222,9 +225,8 @@ public class DevelopmentMain {
 
         // Initialize experiment
         MultiTaskGoalExperiment experiment = MultiTaskGoalExperiment.builder()
-                .environments(two_rooms, doors)
-                // .algorithms(bam)
-                // .algorithms(model)
+                // .environments(two_rooms, doors)
+                .environments(two_fields, three_fields)
                 .algorithms(bam, model)
                 .numSessions(20)
                 .maxDemonstrations(10)
@@ -239,7 +241,7 @@ public class DevelopmentMain {
 
     private static void feedbackTest(File root) throws Exception {
 
-        File folder = Util.stampedFolder("bam_test", root);
+        File folder = Util.stampedFolder("feedback_test", root);
 
         // Initialize test environments
         Environment two_rooms = GridWorlds.twoRooms();
