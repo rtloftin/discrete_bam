@@ -233,6 +233,8 @@ public class MultiTaskGoalExperiment {
             agent.integrate();
 
             // Evaluate policy
+            rewards[demonstration] = 0.0;
+
             for(Task task : environment.tasks()) {
                 agent.task(task.name());
 

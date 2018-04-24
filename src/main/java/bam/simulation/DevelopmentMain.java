@@ -189,7 +189,7 @@ public class DevelopmentMain {
 
         // Task source
         Variational task_source = PointDensity.builder()
-                .optimization(ClippedMomentum.with(0.1, 0.5, 0.5))
+                .optimization(ClippedMomentum.with(0.01, 0.5, 0.1))
                 // .optimization(Adam.with(0.01, 0.8, 0.8, 0.05))
                 .build();
 
@@ -199,22 +199,22 @@ public class DevelopmentMain {
         // Initialize BAM algorithms
         Algorithm bam = BAM.builder()
                 .taskSource(task_source)
-                .dynamicsOptimization(ClippedMomentum.with(0.1, 0.5, 1))
+                .dynamicsOptimization(ClippedMomentum.with(0.01, 0.5, 0.1))
                 // .dynamicsOptimization(Momentum.with(0.01, 0.5))
                 // .dynamicsOptimization(AdaGrad.with(1.0, 0.7))
                 // .dynamicsOptimization(Adam.with(0.01, 0.8, 0.8, 0.05))
                 .planningAlgorithm(BoltzmannPlanner.algorithm( 1.0))
                 .actionModel(action_model)
-                .taskUpdates(10)
-                .dynamicsUpdates(10)
-                .emUpdates(20)
+                .taskUpdates(20)
+                .dynamicsUpdates(20)
+                .emUpdates(40)
                 .useTransitions(true)
                 .build();
 
         // Initialize model-based algorithms
         Algorithm model = ModelBased.builder()
                 .taskSource(task_source)
-                .dynamicsOptimization(ClippedMomentum.with(0.1, 0.5, 1))
+                .dynamicsOptimization(ClippedMomentum.with(0.01, 0.5, 0.2))
                 // .dynamicsOptimization(AdaGrad.with(1.0, 0.7))
                 // .dynamicsOptimization(Adam.with(0.01, 0.8, 0.8, 0.05))
                 .planningAlgorithm(BoltzmannPlanner.algorithm(1.0))
@@ -227,8 +227,9 @@ public class DevelopmentMain {
         MultiTaskGoalExperiment experiment = MultiTaskGoalExperiment.builder()
                 // .environments(two_rooms, doors)
                 .environments(two_fields, three_fields)
-                .algorithms(bam, model)
-                .numSessions(20)
+                // .algorithms(bam, model)
+                .algorithms(bam)
+                .numSessions(10)
                 .maxDemonstrations(10)
                 .evaluationEpisodes(50)
                 //.finalNoop(false)
