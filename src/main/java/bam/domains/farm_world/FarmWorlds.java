@@ -78,7 +78,7 @@ public class FarmWorlds {
     public static FarmWorld twoFields() {
 
         // Initialize navigation grid
-        NavGrid grid = new NavGrid(8, 11, NavGrid.FOUR);
+        NavGrid grid = new NavGrid(8, 12, NavGrid.FOUR);
 
         // Set terrain
         Terrain[][] map = new Terrain[grid.height()][grid.width()];
@@ -104,9 +104,9 @@ public class FarmWorlds {
         for(int row = 0; row < grid.height(); ++row)
             Arrays.fill(machines[row], Machine.NONE);
 
-        machines[4][2] = Machine.HARVESTER;
-        machines[4][5] = Machine.SPRINKLER;
-        machines[9][3] = Machine.PLOW;
+        machines[4][5] = Machine.HARVESTER;
+        machines[4][2] = Machine.SPRINKLER;
+        machines[10][3] = Machine.PLOW;
 
 
         FarmWorld environment = new FarmWorld("two-fields", grid, map, machines);
@@ -121,7 +121,7 @@ public class FarmWorlds {
     public static FarmWorld threeFields() {
 
         // Initialize navigation grid
-        NavGrid grid = new NavGrid(8, 11, NavGrid.FOUR);
+        NavGrid grid = new NavGrid(8, 12, NavGrid.FOUR);
 
         // Set terrain
         Terrain[][] map = new Terrain[grid.height()][grid.width()];

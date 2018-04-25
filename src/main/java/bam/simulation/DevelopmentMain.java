@@ -9,6 +9,7 @@ import bam.algorithms.action.NormalizedActionModel;
 import bam.algorithms.alt.OldNormalizedActionModel;
 import bam.algorithms.feedback.ASABL;
 import bam.algorithms.feedback.FeedbackModel;
+import bam.algorithms.optimization.Adam;
 import bam.algorithms.optimization.ClippedMomentum;
 import bam.algorithms.optimization.Momentum;
 import bam.algorithms.planning.BoltzmannPlanner;
@@ -189,8 +190,7 @@ public class DevelopmentMain {
 
         // Task source
         Variational task_source = PointDensity.builder()
-                .optimization(ClippedMomentum.with(0.01, 0.5, 0.1))
-                // .optimization(Adam.with(0.01, 0.8, 0.8, 0.05))
+                .optimization(ClippedMomentum.with(0.01, 0.7, 0.1))
                 .build();
 
         /* Variational task_source = GaussianDensity.builder()
@@ -199,24 +199,19 @@ public class DevelopmentMain {
         // Initialize BAM algorithms
         Algorithm bam = BAM.builder()
                 .taskSource(task_source)
-                .dynamicsOptimization(ClippedMomentum.with(0.01, 0.5, 0.1))
-                // .dynamicsOptimization(Momentum.with(0.01, 0.5))
-                // .dynamicsOptimization(AdaGrad.with(1.0, 0.7))
-                // .dynamicsOptimization(Adam.with(0.01, 0.8, 0.8, 0.05))
+                .dynamicsOptimization(ClippedMomentum.with(1.0, 0.7, 0.1))
                 .planningAlgorithm(BoltzmannPlanner.algorithm( 1.0))
                 .actionModel(action_model)
                 .taskUpdates(20)
                 .dynamicsUpdates(20)
-                .emUpdates(40)
+                .emUpdates(10)
                 .useTransitions(true)
                 .build();
 
         // Initialize model-based algorithms
         Algorithm model = ModelBased.builder()
                 .taskSource(task_source)
-                .dynamicsOptimization(ClippedMomentum.with(0.01, 0.5, 0.2))
-                // .dynamicsOptimization(AdaGrad.with(1.0, 0.7))
-                // .dynamicsOptimization(Adam.with(0.01, 0.8, 0.8, 0.05))
+                .dynamicsOptimization(ClippedMomentum.with(1.0, 0.7, 0.1))
                 .planningAlgorithm(BoltzmannPlanner.algorithm(1.0))
                 .actionModel(action_model)
                 .taskUpdates(200)
@@ -227,9 +222,10 @@ public class DevelopmentMain {
         MultiTaskGoalExperiment experiment = MultiTaskGoalExperiment.builder()
                 // .environments(two_rooms, doors)
                 .environments(two_fields, three_fields)
-                // .algorithms(bam, model)
-                .algorithms(bam)
-                .numSessions(10)
+                .algorithms(bam, model)
+                // .algorithms(bam)
+                // .algorithms(model)
+                .numSessions(30)
                 .maxDemonstrations(10)
                 .evaluationEpisodes(50)
                 //.finalNoop(false)

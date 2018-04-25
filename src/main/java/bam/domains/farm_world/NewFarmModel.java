@@ -6,7 +6,7 @@ import bam.domains.NavGrid;
 
 import java.util.Arrays;
 
-class FarmModel implements DynamicsModel {
+class NewFarmModel implements DynamicsModel {
 
     // Navigation grid
     private NavGrid grid;
@@ -19,6 +19,9 @@ class FarmModel implements DynamicsModel {
 
     // planning depth
     private final int depth;
+
+    // Offset - to avoid singularity
+    private final double epsilon = 0.1;
 
     // Parameters and gradient
     private final double[] parameters = new double[Terrain.values().length * Machine.values().length];
@@ -34,7 +37,7 @@ class FarmModel implements DynamicsModel {
     // Parameter optimizer
     private Optimization.Instance optimizer = null;
 
-    FarmModel(NavGrid grid, MachineDynamics dynamics, Terrain[][] map, int depth) {
+    NewFarmModel(NavGrid grid, MachineDynamics dynamics, Terrain[][] map, int depth) {
         this.grid = grid;
         this.dynamics = dynamics;
         this.map = map;
@@ -43,7 +46,7 @@ class FarmModel implements DynamicsModel {
 
     @Override
     public void initialize(Optimization optimization) {
-        Arrays.fill(parameters, 0.0); // Initially uniform
+        Arrays.fill(parameters, 1.0); // Initially uniform -- do not initialize to zero
         Arrays.fill(gradient, 0.0);
 
         optimizer = optimization.instance(parameters.length);
@@ -64,8 +67,10 @@ class FarmModel implements DynamicsModel {
             // Compute normalization term
             double normal = 0.0;
 
-            for (Terrain terrain : Terrain.values())
-                normal += Math.exp(parameters[offset + terrain.ordinal()] - parameters[offset]);
+            for (Terrain terrain : Terrain.values()) {
+                double parameter = parameters[offset + terrain.ordinal()];
+                normal += parameter * parameter + epsilon;
+            }
 
             normal = 1.0 / normal;
 
@@ -76,15 +81,17 @@ class FarmModel implements DynamicsModel {
                 double sub_normal = 0.0;
 
                 for (Terrain terrain : Terrain.values()) {
-                    if(terrain != current_terrain)
-                        sub_normal += Math.exp(parameters[offset + terrain.ordinal()] - parameters[offset]);
+                    if(terrain != current_terrain) {
+                        double parameter = parameters[offset + terrain.ordinal()];
+                        sub_normal += parameter * parameter + epsilon;
+                    }
                 }
 
                 sub_normal = 1.0 / sub_normal;
 
                 // Compute gradient
                 for (Terrain terrain : Terrain.values()) {
-                    double scale = weight * Math.exp(parameters[offset + terrain.ordinal()] - parameters[offset]);
+                    double scale = 2.0 * weight * parameters[offset + terrain.ordinal()];
 
                     if(terrain != current_terrain) {
                         gradient[offset + terrain.ordinal()] += scale * (sub_normal - normal);
@@ -94,39 +101,20 @@ class FarmModel implements DynamicsModel {
                 }
 
             } else {
+                double parameter = parameters[offset + current_terrain.ordinal()];
+                double sub_normal = 1.0 / (parameter * parameter + epsilon);
 
                 // Compute gradient
                 for (Terrain terrain : Terrain.values()) {
-                    double scale = Math.exp(parameters[offset + terrain.ordinal()] - parameters[offset]);
+                    double scale = 2.0 * weight * parameters[offset + terrain.ordinal()];
 
                     if(terrain != current_terrain) {
-                        gradient[offset + terrain.ordinal()] -= weight * scale * normal;
+                        gradient[offset + terrain.ordinal()] -= scale * normal;
                     } else {
-                        gradient[offset + terrain.ordinal()] += weight * (1.0 - scale * normal);
+                        gradient[offset + terrain.ordinal()] += scale * (sub_normal - normal);
                     }
                 }
 
-            }
-        }
-
-        if(Terrain.DIRT != current_terrain && Machine.NONE != current_machine) {
-
-            if (dynamics.cell(end) != next_cell)
-                weight = -weight;
-
-            int offset = Terrain.values().length * current_machine.ordinal();
-            double partition = 0.0;
-
-            for (Terrain terrain : Terrain.values())
-                partition += Math.exp(parameters[offset + terrain.ordinal()] - parameters[offset]);
-
-            for (Terrain terrain : Terrain.values()) {
-                double probability = Math.exp(parameters[offset + terrain.ordinal()] - parameters[offset]) / partition;
-
-                if (current_terrain != terrain)
-                    gradient[offset + terrain.ordinal()] -= weight * probability;
-                else
-                    gradient[offset + terrain.ordinal()] += weight * (1.0 - probability);
             }
         }
     }
@@ -138,18 +126,29 @@ class FarmModel implements DynamicsModel {
         if (null == optimizer)
             throw new RuntimeException("Optimization algorithm not initialized");
 
-        // Incorporate regularization term
-        // for(int i = 0; i < parameters.length; ++i)
-           // gradient[i] -= parameters[i];
-
-        // Perform update
+        // Compute update
         optimizer.update(parameters, gradient);
 
+        // Clip parameters
         for(int i = 0; i < parameters.length; ++i){
-            if(parameters[i] > 50.0) {
-                parameters[i] = 50.0;
-            } else if(parameters[i] < -50.0) {
-                parameters[i] = -50.0;
+            if(parameters[i] > 10.0) {
+                parameters[i] = 10.0;
+            } else if(parameters[i] < -10.0) {
+                parameters[i] = -10.0;
+            }
+        }
+
+        // Offset parameters -- avoid singularity where the gradient is zero
+        for(Machine machine : Machine.values()) {
+            int offset = Terrain.values().length * machine.ordinal();
+            boolean is_zero = true;
+
+            for(Terrain terrain : Terrain.values())
+                is_zero = is_zero && (0.0 == parameters[offset + terrain.ordinal()]);
+
+            if(is_zero) {
+                for(Terrain terrain : Terrain.values())
+                    parameters[offset + terrain.ordinal()] = 1.0;
             }
         }
 
@@ -199,12 +198,16 @@ class FarmModel implements DynamicsModel {
             return determined;
 
         int offset = Terrain.values().length * current_machine.ordinal();
-        double partition = 0.0;
+        double normal = 0.0;
 
-        for(Terrain terrain : Terrain.values())
-            partition += Math.exp(parameters[offset + terrain.ordinal()] - parameters[offset]);
+        for(Terrain terrain : Terrain.values()) {
+            double parameter = parameters[offset + terrain.ordinal()];
+            normal += parameter * parameter + epsilon;
+        }
 
-        probable[0] = Math.exp(parameters[offset + current_terrain.ordinal()] - parameters[offset]) / partition;
+        double parameter = parameters[offset + current_terrain.ordinal()];
+
+        probable[0] = parameter * parameter + epsilon;
         probable[1] = 1.0 - probable[0];
 
         return probable;

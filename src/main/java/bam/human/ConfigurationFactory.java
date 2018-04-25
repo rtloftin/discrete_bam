@@ -134,8 +134,8 @@ public class ConfigurationFactory implements Session.Factory {
         // Algorithms - BAM, Model Based, Cloning
         Algorithm bam = BAM.builder()
                 .taskSource(PointDensity.builder()
-                        .optimization(ClippedMomentum.with(0.01, 0.5, 0.2)).build())
-                .dynamicsOptimization(ClippedMomentum.with(0.1, 0.5, 0.2))
+                        .optimization(ClippedMomentum.with(0.01, 0.7, 0.1)).build())
+                .dynamicsOptimization(ClippedMomentum.with(1.0, 0.7, 0.1))
                 .planningAlgorithm(BoltzmannPlanner.algorithm( 1.0))
                 .actionModel(NormalizedActionModel.beta(1.0))
                 .feedbackModel(ASABL.builder().build())
@@ -147,8 +147,8 @@ public class ConfigurationFactory implements Session.Factory {
 
         Algorithm model = ModelBased.builder()
                 .taskSource(PointDensity.builder()
-                        .optimization(ClippedMomentum.with(0.01, 0.5, 0.2)).build())
-                .dynamicsOptimization(ClippedMomentum.with(0.1, 0.5, 0.2))
+                        .optimization(ClippedMomentum.with(0.01, 0.7, 0.1)).build())
+                .dynamicsOptimization(ClippedMomentum.with(1.0, 0.7, 0.1))
                 .planningAlgorithm(BoltzmannPlanner.algorithm(1.0))
                 .actionModel(NormalizedActionModel.beta(1.0))
                 .feedbackModel(ASABL.builder().build())
@@ -158,7 +158,7 @@ public class ConfigurationFactory implements Session.Factory {
 
         Algorithm cloning = Cloning.builder()
                 .taskSource(PointDensity.builder()
-                        .optimization(ClippedMomentum.with(0.01, 0.5, 0.2)).build())
+                        .optimization(ClippedMomentum.with(0.01, 0.7, 0.1)).build())
                 .actionModel(NormalizedActionModel.beta(1.0))
                 .numUpdates(200)
                 .build();

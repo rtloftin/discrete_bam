@@ -6,7 +6,7 @@ import bam.domains.NavGrid;
 
 import java.util.Arrays;
 
-class FarmModel implements DynamicsModel {
+class OldFarmModel implements DynamicsModel {
 
     // Navigation grid
     private NavGrid grid;
@@ -34,7 +34,7 @@ class FarmModel implements DynamicsModel {
     // Parameter optimizer
     private Optimization.Instance optimizer = null;
 
-    FarmModel(NavGrid grid, MachineDynamics dynamics, Terrain[][] map, int depth) {
+    OldFarmModel(NavGrid grid, MachineDynamics dynamics, Terrain[][] map, int depth) {
         this.grid = grid;
         this.dynamics = dynamics;
         this.map = map;

@@ -38,12 +38,12 @@ public class ServerMain {
                 .addHttpListener(8215, "localhost", Handlers.path()
                         .addPrefixPath("/", Handlers
                                 .websocket((WebSocketHttpExchange exchange, WebSocketChannel channel) -> {
-                                    web.add(WebsocketConnection.with(channel, 5000000L));
+                                    web.add(WebsocketConnection.with(channel, 8000000L));
                                 })))
                 .addHttpListener(8217, "localhost", Handlers.path()
                         .addPrefixPath("/", Handlers
                                 .websocket((WebSocketHttpExchange exchange, WebSocketChannel channel) -> {
-                                    mturk.add(WebsocketConnection.with(channel, 5000000L));
+                                    mturk.add(WebsocketConnection.with(channel, 8000000L));
                                 })))
                 .build();
         server.start();
