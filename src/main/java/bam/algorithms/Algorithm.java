@@ -59,6 +59,8 @@ public interface Algorithm {
             return SERD.load(config);
         else if(className.equals(Cloning.class.getSimpleName()))
             return Cloning.load(config);
+        else if(className.equals(CommonReward.class.getSimpleName()))
+            return CommonReward.load(config);
 
         throw new RuntimeException("Unknown Implementation of 'Algorithm' requested");
     }
