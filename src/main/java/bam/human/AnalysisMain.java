@@ -23,11 +23,12 @@ public class AnalysisMain {
     public static void main(String[] args) throws IOException, JSONException {
 
         // Load data
-        Path root = Paths.get("C:\\Users\\Tyler\\Desktop\\users_4_12");
-        DataSet data = DataSet.load(root);
+        // Path root = Paths.get("C:\\Users\\Tyler\\Desktop\\users_4_12");
+        Path root = Paths.get("C:\\Users\\Tyler\\Desktop\\test_users_4_27\\web");
+        DataSet data = DataSet.load(root, EventDecoder.compressedJSON());
 
         // Print number of users
-        System.out.println("total participants: " + data.participants());
+        System.out.println("total participants: " + data.participants().size());
 
         // Filter out incomplete and tutorial sessions
         SessionRecords all_complete = data.participants().filter(SessionFilter.tutorial(), SessionFilter.complete());
@@ -38,19 +39,19 @@ public class AnalysisMain {
         SessionRecords two_rooms = all_complete.filter(SessionFilter.environment("two-rooms"));
         SessionRecords doors = all_complete.filter(SessionFilter.environment("doors"));
         SessionRecords two_fields = all_complete.filter(SessionFilter.environment("two-fields"));
-        SessionRecords six_fields = all_complete.filter(SessionFilter.environment("six-fields"));
+        SessionRecords three_fields = all_complete.filter(SessionFilter.environment("three-fields"));
 
         System.out.println("Two Rooms: " + two_rooms.size() + " sessions");
         System.out.println("Doors: " + doors.size() + " sessions");
         System.out.println("Two Fields: " + two_fields.size() + " sessions");
-        System.out.println("Six Rooms: " + six_fields.size() + " sessions");
+        System.out.println("Three Rooms: " + three_fields.size() + " sessions");
 
 
         Path results_root = root.resolve("analysis");
         process(two_rooms, GridWorlds.twoRooms(), results_root.resolve("two-rooms"));
         process(doors, GridWorlds.doors(), results_root.resolve("doors"));
         process(two_fields, FarmWorlds.twoFields(), results_root.resolve("two-fields"));
-        process(six_fields, FarmWorlds.sixFields(), results_root.resolve("six-fields"));
+        process(three_fields, FarmWorlds.threeFields(), results_root.resolve("three-fields"));
 
         /*
          * The first step in the data analysis would be to filter out all the sessions we aren't

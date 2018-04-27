@@ -94,7 +94,7 @@ public class Performance {
             }
 
             mean /= tasks.size();
-            trained_mean /= task_means.size();
+            trained_mean /= Math.max(1.0, task_means.size());
 
             return new Performance(mean, trained_mean, task_means);
         }
