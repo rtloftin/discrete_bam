@@ -11,8 +11,8 @@ import java.nio.file.Paths;
 public class ServerMain {
 
     public static void main(String[] args) throws Exception {
-        experimentServer();
-        // testServer();
+        // experimentServer();
+        testServer();
     }
 
     // The real server code will go here

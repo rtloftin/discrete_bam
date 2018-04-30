@@ -268,7 +268,17 @@ public class DevelopmentMain {
                 .build();
 
         // Initialize model-based algorithms
-        Algorithm common = CommonReward.builder()
+        Algorithm common_reward = CommonReward.builder()
+                .taskSource(task_source)
+                .dynamicsOptimization(ClippedMomentum.with(1.0, 0.7, 0.1))
+                .planningAlgorithm(BoltzmannPlanner.algorithm(1.0))
+                .actionModel(action_model)
+                .taskUpdates(200)
+                .dynamicsUpdates(200)
+                .build();
+
+        // Initialize model-based algorithms
+        Algorithm common_intent = CommonIntent.builder()
                 .taskSource(task_source)
                 .dynamicsOptimization(ClippedMomentum.with(1.0, 0.7, 0.1))
                 .planningAlgorithm(BoltzmannPlanner.algorithm(1.0))
@@ -281,7 +291,7 @@ public class DevelopmentMain {
         MultiTaskGoalExperiment experiment = MultiTaskGoalExperiment.builder()
                 .environments(two_rooms, doors)
                 // .environments(two_fields, three_fields)
-                .algorithms(bam, common)
+                .algorithms(bam, common_reward, common_intent)
                 // .algorithms(bam)
                 // .algorithms(model)
                 .numSessions(10)
@@ -358,7 +368,7 @@ public class DevelopmentMain {
 
         // Initialize experiment
         MultiTaskFeedbackExperiment experiment = MultiTaskFeedbackExperiment.builder()
-                .environments(two_rooms, doors)
+                // .environments(two_rooms, doors)
                 .environments(two_fields, three_fields)
                 .algorithms(bam, model, cloning)
                 //.algorithms(bam)

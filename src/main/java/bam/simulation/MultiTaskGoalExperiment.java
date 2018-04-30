@@ -317,8 +317,8 @@ public class MultiTaskGoalExperiment {
 
         for(Future<Condition> thread : threads)
             conditions.add(thread.get());
-
-        // Save session data
+        
+        // Save session data as csv
         List<String> columns = new LinkedList<>();
         columns.add("condition");
 

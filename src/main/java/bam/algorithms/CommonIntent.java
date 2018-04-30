@@ -17,7 +17,7 @@ import java.awt.image.BufferedImage;
 import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
 
-public class CommonReward implements Agent {
+public class CommonIntent implements Agent {
 
     public static class Builder {
 
@@ -31,7 +31,7 @@ public class CommonReward implements Agent {
         private boolean reinitialize = false;
 
         // The name of this algorithm
-        private String name = "Common-Reward";
+        private String name = "Common-Intent";
 
         // The optimization method for learning the parameters of the dynamics model
         private Optimization dynamics_optimization = null;
@@ -124,7 +124,7 @@ public class CommonReward implements Agent {
 
                 @Override
                 public Agent agent(Representation representation) {
-                    return new CommonReward(representation, Builder.this);
+                    return new CommonIntent(representation, Builder.this);
                 }
 
                 @Override
@@ -136,7 +136,7 @@ public class CommonReward implements Agent {
                 public JSONObject serialize() throws JSONException {
                     return new JSONObject()
                             .put("name", name())
-                            .put("class", CommonReward.class.getSimpleName())
+                            .put("class", CommonIntent.class.getSimpleName())
                             .put("dynamics updates", dynamics_updates)
                             .put("task updates", task_updates)
                             .put("reinitialize", reinitialize)
@@ -167,62 +167,6 @@ public class CommonReward implements Agent {
                 .build();
     }
 
-    private static class GlobalReward implements RewardMapping {
-
-        private RewardMapping rewards;
-        private int num_states;
-
-        private double[] intent;
-
-        private double[] common_gradient;
-        private double[] intent_gradient;
-
-        private GlobalReward(int num_states, RewardMapping rewards) {
-            this.num_states = num_states;
-            this.rewards = rewards;
-
-            intent = new double[num_states + rewards.intentSize()];
-
-            common_gradient = new double[num_states];
-            intent_gradient = new double[rewards.intentSize()];
-        }
-
-        @Override
-        public double reward(int state, double[] intent) {
-            return rewards.reward(state, intent) + intent[rewards.intentSize() + state];
-        }
-
-        @Override
-        public void gradient(int state, double[] intent, double weight, double[] gradient) {
-            rewards.gradient(state, intent, weight, gradient);
-            gradient[rewards.intentSize() + state] += weight;
-        }
-
-        @Override
-        public int intentSize() {
-            return rewards.intentSize() + num_states;
-        }
-
-        private double[] intent(double[] task, double[] common) {
-            System.arraycopy(task, 0, intent, 0, rewards.intentSize());
-            System.arraycopy(common, 0, intent, rewards.intentSize(), num_states);
-
-            return intent;
-        }
-
-        private double[] intentGradient(double[] gradient) {
-            System.arraycopy(gradient, 0, intent_gradient, 0, rewards.intentSize());
-
-            return intent_gradient;
-        }
-
-        private double[] commonGradient(double[] gradient) {
-            System.arraycopy(gradient, rewards.intentSize(), common_gradient, 0, num_states);
-
-            return common_gradient;
-        }
-    }
-
     private class TaskModel {
 
         // Data specific to this task
@@ -234,6 +178,9 @@ public class CommonReward implements Agent {
 
         // The posterior of the intent vector for this task
         Variational.Density intent;
+
+        // A buffer to hold the combined global and task intents
+        double[] intent_buffer;
 
         // The current policy for this task
         double[][] policy;
@@ -247,6 +194,9 @@ public class CommonReward implements Agent {
 
             // Construct intent distribution
             intent = config.task_source.density(rewards.intentSize(), ThreadLocalRandom.current()); // Makes this class non-thread safe
+
+            // Construct intent buffer
+            intent_buffer = new double[rewards.intentSize()];
 
             // Construct policy buffer
             policy = new double[dynamics.numStates()][];
@@ -286,7 +236,13 @@ public class CommonReward implements Agent {
                 intent.nextSample();
                 common.nextSample();
 
-                graph.setIntent(global.intent(intent.value(), common.value()));
+                double[] task_intent = intent.value();
+                double[] common_intent = intent.value();
+
+                for(int i=0; i < rewards.intentSize(); ++i)
+                    intent_buffer[i] = task_intent[i] + common_intent[i];
+
+                graph.setIntent(intent_buffer);
 
                 // Get Q-function from the planner
                 double[][] Q = planner.values();
@@ -309,8 +265,8 @@ public class CommonReward implements Agent {
 
                 // propagate intent
                 graph.intentGradient((double[] gradient) -> {
-                    intent.train(global.intentGradient(gradient));
-                    common.train(global.commonGradient(gradient));
+                    intent.train(gradient);
+                    common.train(gradient);
                 });
             }
 
@@ -318,7 +274,13 @@ public class CommonReward implements Agent {
         }
 
         void updatePolicy() {
-            graph.setIntent(global.intent(intent.mean(), common.mean()));
+            double[] task_intent = intent.mean();
+            double[] common_intent = intent.mean();
+
+            for(int i=0; i < rewards.intentSize(); ++i)
+                intent_buffer[i] = task_intent[i] + common_intent[i];
+
+            graph.setIntent(intent_buffer);
             policy = GreedyActionModel.get().policy(planner.values());
         }
     }
@@ -347,16 +309,13 @@ public class CommonReward implements Agent {
     // The task models
     private final HashMap<String, TaskModel> tasks;
 
-    // The reward mapping which combines the task and common reward functions
-    private final GlobalReward global;
-
     // The common reward function
     private Variational.Density common;
 
     // The current task
     private TaskModel task = null;
 
-    private CommonReward(Representation representation, Builder config) {
+    private CommonIntent(Representation representation, Builder config) {
         this.config = config;
 
         // Get reward mapping
@@ -366,11 +325,8 @@ public class CommonReward implements Agent {
         this.dynamics = representation.newModel();
         this.dynamics.initialize(config.dynamics_optimization);
 
-        // Build common reward mapping
-        this.global = new GlobalReward(dynamics.numStates(), rewards);
-
         // Build planning graph
-        graph = IntentGraph.of(dynamics, global);
+        graph = IntentGraph.of(dynamics, rewards);
 
         // Initialize planner
         planner = config.planning_algorithm.planner(graph);
@@ -382,7 +338,7 @@ public class CommonReward implements Agent {
             jacobian[state] = new double[representation.numActions(state)];
 
         // Initialize common reward
-        common = config.task_source.density(dynamics.numStates(), ThreadLocalRandom.current());
+        common = config.task_source.density(rewards.intentSize(), ThreadLocalRandom.current());
         common.initialize();
 
         // Initialize task set
