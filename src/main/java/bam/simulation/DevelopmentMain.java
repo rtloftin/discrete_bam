@@ -44,9 +44,7 @@ public class DevelopmentMain {
 
         Util.setPreference("root", root.get().getPath());
 
-        // cloningTest(root.get());
-        bamTest(root.get());
-        // goalTest(root.get());
+        goalTest(root.get());
         // commonTest(root.get());
 
     }
@@ -170,11 +168,96 @@ public class DevelopmentMain {
     private static void goalTest(File root) throws Exception {
         File folder = Util.stampedFolder("goal_test", root);
 
+        Environment center_block = GridWorlds.centerBlock(NavGrid.FOUR);
+        Environment center_wall = GridWorlds.centerWall(NavGrid.FOUR);
+        Environment three_rooms = GridWorlds.threeRooms(NavGrid.FOUR);
+        Environment two_rooms = GridWorlds.twoRooms();
+        Environment doors = GridWorlds.doors();
+
+        Environment flip = GravityWorlds.flip();
+        Environment medium_flip = GravityWorlds.medium_flip();
+        Environment choices = GravityWorlds.choices();
+        Environment wall = GravityWorlds.wall();
+
+        Environment two_fields = FarmWorlds.twoFields();
+        Environment three_fields = FarmWorlds.threeFields();
+
+        // Action Model
+        ActionModel action_model = NormalizedActionModel.beta(1.0);
+
+        // Task source
+        Variational task_source = PointDensity.builder()
+                .optimization(ClippedMomentum.with(0.01, 0.7, 0.1))
+                .build();
+
+        /* Variational task_source = GaussianDensity.builder()
+                .optimization(AdaGrad.with(0.001, 0.7)).priorDeviation(1.0).numSamples(5).build(); */
+
+        // Initialize BAM algorithm
+        Algorithm bam = BAM.builder()
+                .taskSource(task_source)
+                .dynamicsOptimization(ClippedMomentum.with(1.0, 0.7, 0.1))
+                .planningAlgorithm(BoltzmannPlanner.algorithm( 1.0))
+                .actionModel(action_model)
+                .taskUpdates(20)
+                .dynamicsUpdates(20)
+                .emUpdates(10)
+                .useTransitions(true)
+                .build();
+
+        // Initialize model-based algorithm
+        Algorithm model = ModelBased.builder()
+                .taskSource(task_source)
+                .dynamicsOptimization(ClippedMomentum.with(1.0, 0.7, 0.1))
+                .planningAlgorithm(BoltzmannPlanner.algorithm(1.0))
+                .actionModel(action_model)
+                .taskUpdates(200)
+                .dynamicsUpdates(200)
+                .build();
+
+        // Initialize cloning algorithm
+        Algorithm cloning = Cloning.builder()
+                .taskSource(task_source)
+                .actionModel(action_model)
+                .numUpdates(200)
+                .build();
+
+        Algorithm ml_irl = MLIRL.builder()
+                .taskSource(task_source)
+                .planningAlgorithm(BoltzmannPlanner.algorithm(1.0))
+                .actionModel(action_model)
+                .taskUpdates(200)
+                .build();
+
+                // Initialize experiment
+        MultiTaskGoalExperiment experiment = MultiTaskGoalExperiment.builder()
+                // .environments(center_block, center_wall, three_rooms, two_rooms, doors)
+                // .environments(flip, medium_flip, choices, wall)
+                .environments(two_fields, three_fields)
+                .algorithms(bam, model, cloning, ml_irl)
+                .numSessions(50)
+                .maxDemonstrations(10)
+                .evaluationEpisodes(50)
+                .finalNoop(true)
+                .build();
+
+
+
+        // Run experiment
+        experiment.run(folder);
+    }
+
+    private static void commonTest(File root) throws Exception {
+        File folder = Util.stampedFolder("common_test", root);
+
         Environment two_rooms = GridWorlds.twoRooms();
         Environment doors = GridWorlds.doors();
 
         Environment two_fields = FarmWorlds.twoFields();
         Environment three_fields = FarmWorlds.threeFields();
+
+        Environment flip = GravityWorlds.flip();
+        Environment medium_flip = GravityWorlds.medium_flip();
 
         // Action Model
         ActionModel action_model = NormalizedActionModel.beta(1.0);
@@ -209,56 +292,6 @@ public class DevelopmentMain {
                 .dynamicsUpdates(200)
                 .build();
 
-        // Initialize experiment
-        MultiTaskGoalExperiment experiment = MultiTaskGoalExperiment.builder()
-                // .environments(two_rooms, doors)
-                .environments(two_fields, three_fields)
-                .algorithms(bam, model)
-                // .algorithms(bam)
-                // .algorithms(model)
-                .numSessions(30)
-                .maxDemonstrations(10)
-                .evaluationEpisodes(50)
-                //.finalNoop(false)
-                .finalNoop(true)
-                .build();
-
-        // Run experiment
-        experiment.run(folder);
-    }
-
-    private static void commonTest(File root) throws Exception {
-        File folder = Util.stampedFolder("common_test", root);
-
-        Environment two_rooms = GridWorlds.twoRooms();
-        Environment doors = GridWorlds.doors();
-
-        Environment two_fields = FarmWorlds.twoFields();
-        Environment three_fields = FarmWorlds.threeFields();
-
-        // Action Model
-        ActionModel action_model = NormalizedActionModel.beta(1.0);
-
-        // Task source
-        Variational task_source = PointDensity.builder()
-                .optimization(ClippedMomentum.with(0.01, 0.7, 0.1))
-                .build();
-
-        /* Variational task_source = GaussianDensity.builder()
-                .optimization(AdaGrad.with(0.001, 0.7)).priorDeviation(1.0).numSamples(5).build(); */
-
-        // Initialize BAM algorithms
-        Algorithm bam = BAM.builder()
-                .taskSource(task_source)
-                .dynamicsOptimization(ClippedMomentum.with(1.0, 0.7, 0.1))
-                .planningAlgorithm(BoltzmannPlanner.algorithm( 1.0))
-                .actionModel(action_model)
-                .taskUpdates(20)
-                .dynamicsUpdates(20)
-                .emUpdates(10)
-                .useTransitions(true)
-                .build();
-
         // Initialize model-based algorithms
         Algorithm common_reward = CommonReward.builder()
                 .taskSource(task_source)
@@ -281,12 +314,11 @@ public class DevelopmentMain {
 
         // Initialize experiment
         MultiTaskGoalExperiment experiment = MultiTaskGoalExperiment.builder()
-                .environments(two_rooms, doors)
+                // .environments(two_rooms, doors)
                 // .environments(two_fields, three_fields)
-                .algorithms(bam, common_reward, common_intent)
-                // .algorithms(bam)
-                // .algorithms(model)
-                .numSessions(10)
+                .environments(flip, medium_flip)
+                .algorithms(bam, model, common_reward, common_intent)
+                .numSessions(50)
                 .maxDemonstrations(10)
                 .evaluationEpisodes(50)
                 //.finalNoop(false)
