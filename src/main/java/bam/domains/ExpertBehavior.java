@@ -1,7 +1,7 @@
 package bam.domains;
 
 import bam.algorithms.Behavior;
-import bam.algorithms.Expert;
+import bam.algorithms.ExpertPolicy;
 
 import java.util.List;
 
@@ -11,7 +11,7 @@ public class ExpertBehavior {
         Behavior behavior = Behavior.get();
 
         for(Task task : tasks)
-            behavior.put(task.name(), Expert.with(environment.dynamics(), task).policy());
+            behavior.put(task.name(), ExpertPolicy.with(environment.dynamics(), task).policy());
 
         return behavior;
     }

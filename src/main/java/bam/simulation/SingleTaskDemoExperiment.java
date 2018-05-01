@@ -139,7 +139,7 @@ public class SingleTaskDemoExperiment {
             this.sessions = sessions;
             this.name = name;
 
-            rewards = RealVariable.vector(max_demonstrations);
+            rewards = RealVariable.get();
 
             // Process sessions
             Session best_session = null;
@@ -160,7 +160,7 @@ public class SingleTaskDemoExperiment {
 
     private Session session(Environment environment,
                             Task task,
-                            Expert expert,
+                            ExpertPolicy expert,
                             Algorithm algorithm) {
 
         // Get random number generator
@@ -212,7 +212,7 @@ public class SingleTaskDemoExperiment {
 
     private Condition condition(Environment environment,
                                 Task task,
-                                Expert expert,
+                                ExpertPolicy expert,
                                 Algorithm algorithm,
                                 Log log) throws Exception {
         log.write("starting condition, environment: " + environment.name()
@@ -243,7 +243,7 @@ public class SingleTaskDemoExperiment {
     private int experiment(Environment environment, Task task, File folder, Log log) throws Exception {
 
         // Build expert
-        Expert expert = Expert.with(environment.dynamics(), task);
+        ExpertPolicy expert = ExpertPolicy.with(environment.dynamics(), task);
 
         // Compute expert performance
         Dynamics dynamics = environment.dynamics();
@@ -256,7 +256,7 @@ public class SingleTaskDemoExperiment {
         expert_performance /= evaluation_episodes;
 
         // Compute baseline performance
-        Baseline baseline = Baseline.with(dynamics);
+        BaselinePolicy baseline = BaselinePolicy.with(dynamics);
         double baseline_performance = 0.0;
 
         for(int episode = 0; episode < evaluation_episodes; ++episode)

@@ -5,6 +5,7 @@ import bam.domains.Environment;
 import bam.domains.Task;
 import bam.simulation.Log;
 import bam.simulation.Table;
+import bam.simulation.RealVariable;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -256,10 +257,10 @@ public class ReplayExperiment {
     private int experiment(Environment environment, File folder, Log log) throws Exception {
 
         // Build experts
-        Map<String, Expert> experts = new HashMap<>();
+        Map<String, ExpertPolicy> experts = new HashMap<>();
 
         for(Task task : environment.tasks())
-            experts.put(task.name(), Expert.with(environment.dynamics(), task));
+            experts.put(task.name(), ExpertPolicy.with(environment.dynamics(), task));
 
         // Compute expert performance
         Dynamics dynamics = environment.dynamics();
@@ -273,7 +274,7 @@ public class ReplayExperiment {
         expert_performance /= evaluation_episodes;
 
         // Compute baseline performance
-        Baseline baseline = Baseline.with(dynamics);
+        BaselinePolicy baseline = BaselinePolicy.with(dynamics);
         double baseline_performance = 0.0;
 
         for(Task task : environment.tasks())

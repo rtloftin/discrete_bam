@@ -10,7 +10,7 @@ import java.util.List;
  * Used to compute certain statistics
  * more easily.
  *
- * Created by Tyler on 10/10/2017.
+ * Created by Tyler on 4/21/2018.
  */
 public class RealVariable {
 
@@ -24,59 +24,74 @@ public class RealVariable {
     private double[] deviation;
     private double[] error;
 
-    private RealVariable(int size) {
-        this.size = size;
+    private RealVariable() {
         ready = false;
-
-        mean = new double[size];
-        variance = new double[size];
-        deviation = new double[size];
-        error = new double[size];
-
         samples = new ArrayList<>();
+
+        size = 0;
     }
 
     private void update() {
-        if(!ready)
-            for(int dim = 0; dim < size; ++dim) {
+        if(!ready) {
+
+            // Initialize variables
+            mean = new double[size];
+            variance = new double[size];
+            deviation = new double[size];
+            error = new double[size];
+
+            for (int dim = 0; dim < size; ++dim) {
+                int count = 0;
 
                 // Compute mean
                 mean[dim] = 0.0;
 
-                for(double[] sample : samples)
-                    mean[dim] += sample[dim];
+                for (double[] sample : samples) {
+                    if(sample.length > dim) {
+                        mean[dim] += sample[dim];
+                        ++count;
+                    }
+                }
 
-                mean[dim] /= samples.size();
+                mean[dim] /= count;
 
                 // Compute variance
                 variance[dim] = 0.0;
 
-                for(double[] sample: samples) {
-                    double del = sample[dim] - mean[dim];
-                    variance[dim] += del * del;
+                for (double[] sample : samples) {
+                    if(sample.length > dim) {
+                        double del = sample[dim] - mean[dim];
+                        variance[dim] += del * del;
+                    }
                 }
 
-                variance[dim] /= (samples.size() - 1);
+                variance[dim] = (1 == count) ? 0.0 : (variance[dim] / (count - 1) );
 
                 // Compute deviation
                 deviation[dim] = Math.sqrt(variance[dim]);
 
                 // Compute error
-                error[dim] = Math.sqrt(variance[dim] / samples.size());
+                error[dim] = Math.sqrt(variance[dim] / count);
             }
+        }
 
         ready = true;
     }
 
-    public static RealVariable scalar() { return new RealVariable(1); }
-
-    public static RealVariable vector(int size) { return new RealVariable(size); }
+    public static RealVariable get() { return new RealVariable(); }
 
     public RealVariable add(double... sample) {
         ready = false;
         samples.add(sample);
 
+        if(sample.length > size)
+            size = sample.length;
+
         return this;
+    }
+
+    public int size() {
+        return size;
     }
 
     public double[] mean() {
@@ -127,3 +142,4 @@ public class RealVariable {
         return deviation()[dimension];
     }
 }
+

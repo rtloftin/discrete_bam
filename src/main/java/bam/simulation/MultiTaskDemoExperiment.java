@@ -4,11 +4,13 @@ import bam.algorithms.*;
 import bam.domains.Environment;
 import bam.domains.Task;
 import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.File;
+import java.io.IOException;
 import java.io.PrintStream;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
@@ -102,67 +104,8 @@ public class MultiTaskDemoExperiment {
         pool = Executors.newCachedThreadPool();
     }
 
-    /*
-     * Stores the results of a single training
-     * session, including the expected policy
-     * return after each demonstration, the
-     * number of steps required for the algorithms's
-     * policy to become acceptable, and the
-     * final knowledge state of the algorithms.
-     */
-    private class Session {
-        final double[] rewards;
-        final Agent agent;
-
-        Session(double[] rewards, Agent agent) {
-            this.rewards = rewards;
-            this.agent = agent;
-        }
-    }
-
-    /*
-     * Stores and processes all the sessions
-     * generated under a single condition.
-     */
-    private class Condition {
-
-        // The results of each session
-        final List<Session> sessions;
-
-        // The session with the best final performance
-        final Session best;
-
-        // The reward traces represented as a sample of a random variable
-        final RealVariable rewards;
-
-        // The name of the condition
-        final String name;
-
-        Condition(List<Session> sessions, String name) {
-            this.sessions = sessions;
-            this.name = name;
-
-            rewards = RealVariable.vector(max_demonstrations);
-
-            // Process sessions
-            Session best_session = null;
-            double max = -Double.MAX_VALUE;
-
-            for(Session session : sessions) {
-                rewards.add(session.rewards);
-
-                if (session.rewards[max_demonstrations - 1] > max) {
-                    best_session = session;
-                    max = session.rewards[max_demonstrations - 1];
-                }
-            }
-
-            best = best_session;
-        }
-    }
-
     private Session session(Environment environment,
-                            Map<String, Expert> experts,
+                            Map<String, ExpertPolicy> experts,
                             Algorithm algorithm) {
 
         // Get random number generator
@@ -174,9 +117,8 @@ public class MultiTaskDemoExperiment {
         // Get environment dynamics
         Dynamics dynamics = environment.dynamics();
 
-        // Initialize reward trace
-        double[] rewards = new double[max_demonstrations];
-        Arrays.fill(rewards, 0.0);
+        // Initialize session
+        Session session = Session.with(agent);
 
         // Generate Demonstrations
         for(int demonstration = 0; demonstration < max_demonstrations; ++demonstration) {
@@ -185,7 +127,7 @@ public class MultiTaskDemoExperiment {
             for(Task task : environment.tasks()) {
 
                 // Get the agent for the current task
-                Expert expert = experts.get(task.name());
+                ExpertPolicy expert = experts.get(task.name());
 
                 // Tell the agent what the current task is
                 agent.task(task.name());
@@ -211,25 +153,33 @@ public class MultiTaskDemoExperiment {
             agent.integrate();
 
             // Evaluate policy
+            double performance = 0.0;
+
             for(Task task : environment.tasks()) {
                 agent.task(task.name());
 
                 for(int episode = 0; episode < evaluation_episodes; ++episode)
-                    rewards[demonstration] += dynamics
+                    performance += dynamics
                             .simulate(agent, task, task.initial(random), dynamics.depth(), random);
             }
 
-            rewards[demonstration] /= evaluation_episodes;
+            session.episode(performance / evaluation_episodes);
         }
 
-        return this.new Session(rewards, agent);
+        // Return results
+        return session;
     }
 
     private Condition condition(Environment environment,
-                                Map<String, Expert> experts,
+                                Map<String, ExpertPolicy> experts,
                                 Algorithm algorithm,
                                 Log log) throws Exception {
+
+        // Print initial message
         log.write("starting condition, environment: " + environment.name() + ", algorithm: " + algorithm.name());
+
+        // Initialize condition
+        Condition condition = Condition.with(algorithm.name());
 
         // Launch sessions
         List<Future<Session>> threads = new ArrayList<>();
@@ -238,27 +188,23 @@ public class MultiTaskDemoExperiment {
             threads.add(pool.submit(() -> session(environment, experts, algorithm)));
 
         // Join sessions
-        LinkedList<Session> sessions = new LinkedList<>();
+        for (int session = 0; session < num_sessions; ++session)
+            condition.add(threads.get(session).get());
 
-        for (int session = 0; session < num_sessions; ++session) {
-            sessions.add(threads.get(session).get());
-            log.write("completed session " + session + ", environment: "
-                    + environment.name() + ", algorithm: " + algorithm.name());
-        }
-
+        // Print completion message
         log.write("completed condition, environment: " + environment.name() + ", algorithm: " + algorithm.name());
 
         // Return results
-        return this.new Condition(sessions, algorithm.name());
+        return condition;
     }
 
     private int experiment(Environment environment, File folder, Log log) throws Exception {
 
         // Build experts
-        Map<String, Expert> experts = new HashMap<>();
+        Map<String, ExpertPolicy> experts = new HashMap<>();
 
         for(Task task : environment.tasks())
-            experts.put(task.name(), Expert.with(environment.dynamics(), task));
+            experts.put(task.name(), ExpertPolicy.with(environment.dynamics(), task));
 
         // Compute expert performance
         Dynamics dynamics = environment.dynamics();
@@ -272,7 +218,7 @@ public class MultiTaskDemoExperiment {
         expert_performance /= evaluation_episodes;
 
         // Compute baseline performance
-        Baseline baseline = Baseline.with(dynamics);
+        BaselinePolicy baseline = BaselinePolicy.with(dynamics);
         double baseline_performance = 0.0;
 
         for(Task task : environment.tasks())
@@ -294,55 +240,8 @@ public class MultiTaskDemoExperiment {
         for(Future<Condition> thread : threads)
             conditions.add(thread.get());
 
-        // Save session data
-        List<String> columns = new LinkedList<>();
-        columns.add("condition");
-
-        for(int demo = 1; demo <= max_demonstrations; ++demo)
-            columns.add("d" + demo);
-
-        Table sessions = Table.create("sessions", columns);
-
-        for(Condition condition : conditions)
-            for(Session session : condition.sessions)
-                sessions.newRow()
-                        .add(condition.name)
-                        .add(session.rewards);
-
-        sessions.csv(folder);
-
-        // Save average rewards
-        columns = new LinkedList<>();
-        columns.add("Demonstration");
-        columns.add("Baseline");
-        columns.add("Expert");
-
-        for(Condition condition : conditions) {
-            columns.add(condition.name);
-            columns.add(condition.name + "-dev");
-            columns.add(condition.name + "-err");
-        }
-
-        Table rewards = Table.create("rewards", columns);
-
-        for(int demo = 0; demo < max_demonstrations; ++demo) {
-            Table.Row row = rewards.newRow().add(demo + 1);
-            row.add(baseline_performance);
-            row.add(expert_performance);
-
-            for(Condition condition : conditions)
-                row.add(condition.rewards.mean(demo))
-                        .add(condition.rewards.deviation(demo))
-                        .add(condition.rewards.error(demo));
-        }
-
-        rewards.table(folder);
-
-        // Save visualizations
-        for(Condition condition : conditions)
-            for(Visualization visualization : condition.best.agent.visualizations())
-                ImageIO.write(visualization.image, "png",
-                        new File(folder, condition.name + "_" + visualization.name + ".png"));
+        // Record data for this experiment
+        Condition.record(folder, expert_performance, baseline_performance, conditions.toArray(new Condition[0]));
 
         return 0;
     }

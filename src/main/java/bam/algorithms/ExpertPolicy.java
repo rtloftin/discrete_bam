@@ -12,12 +12,12 @@ import bam.algorithms.action.GreedyActionModel;
  *
  * Created by Tyler on 9/6/2017.
  */
-public class Expert implements Policy {
+public class ExpertPolicy implements Policy {
 
     private double[][] Q;
     private double[][] PI;
 
-    private Expert(Dynamics dynamics, Reward rewards) {
+    private ExpertPolicy(Dynamics dynamics, Reward rewards) {
 
         // Get optimal Q-function
         Q = MaxPlanner.algorithm().planner(dynamics, rewards).values();
@@ -26,8 +26,8 @@ public class Expert implements Policy {
         PI = GreedyActionModel.get().policy(Q);
     }
 
-    public static Expert with(Dynamics dynamics, Reward rewards) {
-        return new Expert(dynamics, rewards);
+    public static ExpertPolicy with(Dynamics dynamics, Reward rewards) {
+        return new ExpertPolicy(dynamics, rewards);
     }
 
     public double[][] values() { return Q; }

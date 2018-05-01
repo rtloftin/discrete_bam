@@ -11,7 +11,7 @@ import bam.algorithms.optimization.ClippedMomentum;
 import bam.algorithms.planning.BoltzmannPlanner;
 import bam.algorithms.variational.PointDensity;
 
-import bam.domains.Experts;
+import bam.domains.ExpertAgent;
 import bam.domains.farm_world.FarmWorld;
 import bam.domains.farm_world.FarmWorlds;
 import bam.domains.grid_world.GridWorld;
@@ -165,7 +165,7 @@ public class ConfigurationFactory implements Session.Factory {
 
         // Grid World Domain
         GridWorld grid_tutorial = GridWorlds.tutorial();
-        Algorithm grid_expert = Experts.algorithm(grid_tutorial);
+        Algorithm grid_expert = ExpertAgent.algorithm(grid_tutorial);
 
         Layout grid_layout = new Layout("tutorial", RemoteGridWorld.with(grid_tutorial), grid_expert);
         Layout two_rooms = new Layout("two-rooms", RemoteGridWorld.with(GridWorlds.twoRooms()), bam, model, cloning);
@@ -175,7 +175,7 @@ public class ConfigurationFactory implements Session.Factory {
 
         // Farm World Domain
         FarmWorld farm_tutorial = FarmWorlds.tutorial();
-        Algorithm farm_expert = Experts.algorithm(farm_tutorial);
+        Algorithm farm_expert = ExpertAgent.algorithm(farm_tutorial);
 
         Layout farm_layout = new Layout("tutorial", RemoteFarmWorld.with(farm_tutorial), farm_expert);
         Layout two_fields = new Layout("two-fields", RemoteFarmWorld.with(FarmWorlds.twoFields()), bam, model, cloning);

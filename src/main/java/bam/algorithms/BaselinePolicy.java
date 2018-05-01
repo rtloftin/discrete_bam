@@ -2,11 +2,11 @@ package bam.algorithms;
 
 import java.util.Arrays;
 
-public class Baseline implements Policy {
+public class BaselinePolicy implements Policy {
 
     private double[][] policy;
 
-    private Baseline(Dynamics dynamics) {
+    private BaselinePolicy(Dynamics dynamics) {
         policy = new double[dynamics.numStates()][];
 
         for(int state = 0; state < policy.length; ++state) {
@@ -15,8 +15,8 @@ public class Baseline implements Policy {
         }
     }
 
-    public static Baseline with(Dynamics dynamics){
-        return new Baseline(dynamics);
+    public static BaselinePolicy with(Dynamics dynamics){
+        return new BaselinePolicy(dynamics);
     }
 
     @Override
