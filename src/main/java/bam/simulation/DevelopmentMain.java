@@ -44,9 +44,9 @@ public class DevelopmentMain {
 
         Util.setPreference("root", root.get().getPath());
 
-        goalTest(root.get());
+        // goalTest(root.get());
         // commonTest(root.get());
-
+        feedbackTest(root.get());
     }
 
     private static void cloningTest(File root) throws Exception {
@@ -250,14 +250,19 @@ public class DevelopmentMain {
     private static void commonTest(File root) throws Exception {
         File folder = Util.stampedFolder("common_test", root);
 
+        Environment center_block = GridWorlds.centerBlock(NavGrid.FOUR);
+        Environment center_wall = GridWorlds.centerWall(NavGrid.FOUR);
+        Environment three_rooms = GridWorlds.threeRooms(NavGrid.FOUR);
         Environment two_rooms = GridWorlds.twoRooms();
         Environment doors = GridWorlds.doors();
 
-        Environment two_fields = FarmWorlds.twoFields();
-        Environment three_fields = FarmWorlds.threeFields();
-
         Environment flip = GravityWorlds.flip();
         Environment medium_flip = GravityWorlds.medium_flip();
+        Environment choices = GravityWorlds.choices();
+        Environment wall = GravityWorlds.wall();
+
+        Environment two_fields = FarmWorlds.twoFields();
+        Environment three_fields = FarmWorlds.threeFields();
 
         // Action Model
         ActionModel action_model = NormalizedActionModel.beta(1.0);
@@ -314,14 +319,13 @@ public class DevelopmentMain {
 
         // Initialize experiment
         MultiTaskGoalExperiment experiment = MultiTaskGoalExperiment.builder()
-                // .environments(two_rooms, doors)
-                // .environments(two_fields, three_fields)
-                .environments(flip, medium_flip)
+                // .environments(center_block, center_wall, three_rooms, two_rooms, doors)
+                // .environments(flip, medium_flip, choices, wall)
+                .environments(two_fields, three_fields)
                 .algorithms(bam, model, common_reward, common_intent)
                 .numSessions(50)
                 .maxDemonstrations(10)
                 .evaluationEpisodes(50)
-                //.finalNoop(false)
                 .finalNoop(true)
                 .build();
 
@@ -348,18 +352,16 @@ public class DevelopmentMain {
 
         // Task source
         Variational task_source = PointDensity.builder()
-                .optimization(ClippedMomentum.with(0.01, 0.5, 0.2))
+                .optimization(ClippedMomentum.with(0.01, 0.7, 0.1))
                 .build();
 
         /* Variational task_source = GaussianDensity.builder()
                 .optimization(AdaGrad.with(0.001, 0.7)).priorDeviation(1.0).numSamples(5).build(); */
 
-        // Initialize BAM algorithms
+        // Initialize BAM algorithm
         Algorithm bam = BAM.builder()
                 .taskSource(task_source)
-                .dynamicsOptimization(ClippedMomentum.with(0.1, 0.5, 0.2))
-                // .dynamicsOptimization(AdaGrad.with(1.0, 0.7))
-                // .dynamicsOptimization(Adam.with(0.01, 0.8, 0.8, 0.05))
+                .dynamicsOptimization(ClippedMomentum.with(1.0, 0.7, 0.1))
                 .planningAlgorithm(BoltzmannPlanner.algorithm( 1.0))
                 .actionModel(action_model)
                 .feedbackModel(feedback_model)
@@ -369,25 +371,23 @@ public class DevelopmentMain {
                 .useTransitions(true)
                 .build();
 
-        // Initialize model-based algorithms
+        // Initialize model-based algorithm
         Algorithm model = ModelBased.builder()
                 .taskSource(task_source)
-                .dynamicsOptimization(ClippedMomentum.with(0.1, 0.5, 0.2))
-                // .dynamicsOptimization(AdaGrad.with(1.0, 0.7))
-                // .dynamicsOptimization(Adam.with(0.01, 0.8, 0.8, 0.05))
+                .dynamicsOptimization(ClippedMomentum.with(1.0, 0.7, 0.1))
                 .planningAlgorithm(BoltzmannPlanner.algorithm(1.0))
                 .actionModel(action_model)
                 .feedbackModel(feedback_model)
-                .taskUpdates(100)
-                .dynamicsUpdates(100)
+                .taskUpdates(200)
+                .dynamicsUpdates(200)
                 .build();
 
-        // Initialize cloning algorithms
+        // Initialize cloning algorithm
         Algorithm cloning = Cloning.builder()
                 .taskSource(task_source)
                 .actionModel(action_model)
                 .feedbackModel(feedback_model)
-                .numUpdates(100)
+                .numUpdates(200)
                 .build();
 
         // Initialize experiment
@@ -395,9 +395,8 @@ public class DevelopmentMain {
                 // .environments(two_rooms, doors)
                 .environments(two_fields, three_fields)
                 .algorithms(bam, model, cloning)
-                //.algorithms(bam)
                 .feedbackModel(feedback_model)
-                .numSessions(10)
+                .numSessions(20)
                 .trainingEpisodes(50)
                 .evaluationEpisodes(50)
                 .build();
