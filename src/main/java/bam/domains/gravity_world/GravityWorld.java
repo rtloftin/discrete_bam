@@ -170,8 +170,8 @@ public class GravityWorld implements Environment {
         graphics.fillRect(0, 0, image.getWidth(), image.getHeight());
 
         Shape[] shapes = new Shape[4];
-        shapes[Gravity.NORTH.ordinal()] = new Polygon(new int[] {0, SCALE / 2, SCALE}, new int[]{0, SCALE, 0}, 3);
-        shapes[Gravity.SOUTH.ordinal()] = new Polygon(new int[] {0, SCALE / 2, SCALE}, new int[]{SCALE, 0, SCALE}, 3);
+        shapes[Gravity.NORTH.ordinal()] = new Polygon(new int[] {0, SCALE / 2, SCALE}, new int[]{SCALE, 0, SCALE}, 3);
+        shapes[Gravity.SOUTH.ordinal()] = new Polygon(new int[] {0, SCALE / 2, SCALE}, new int[]{0, SCALE, 0}, 3);
         shapes[Gravity.EAST.ordinal()] = new Polygon(new int[]{0, SCALE, 0}, new int[] {0, SCALE / 2, SCALE}, 3);
         shapes[Gravity.WEST.ordinal()] = new Polygon(new int[]{SCALE, 0, SCALE}, new int[] {0, SCALE / 2, SCALE}, 3);
 

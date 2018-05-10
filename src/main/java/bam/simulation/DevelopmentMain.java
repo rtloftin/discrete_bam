@@ -44,9 +44,9 @@ public class DevelopmentMain {
 
         Util.setPreference("root", root.get().getPath());
 
-        // goalTest(root.get());
+        goalTest(root.get());
         // commonTest(root.get());
-        feedbackTest(root.get());
+        // feedbackTest(root.get());
     }
 
     private static void cloningTest(File root) throws Exception {
@@ -232,8 +232,10 @@ public class DevelopmentMain {
                 // Initialize experiment
         MultiTaskGoalExperiment experiment = MultiTaskGoalExperiment.builder()
                 // .environments(center_block, center_wall, three_rooms, two_rooms, doors)
+                // .environments(center_block, center_wall)
                 // .environments(flip, medium_flip, choices, wall)
-                .environments(two_fields, three_fields)
+                .environments(medium_flip, choices)
+                // .environments(two_fields, three_fields)
                 .algorithms(bam, model, cloning, ml_irl)
                 .numSessions(50)
                 .maxDemonstrations(10)
@@ -320,8 +322,9 @@ public class DevelopmentMain {
         // Initialize experiment
         MultiTaskGoalExperiment experiment = MultiTaskGoalExperiment.builder()
                 // .environments(center_block, center_wall, three_rooms, two_rooms, doors)
+                .environments(center_block, center_wall)
                 // .environments(flip, medium_flip, choices, wall)
-                .environments(two_fields, three_fields)
+                // .environments(two_fields, three_fields)
                 .algorithms(bam, model, common_reward, common_intent)
                 .numSessions(50)
                 .maxDemonstrations(10)

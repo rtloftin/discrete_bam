@@ -173,8 +173,8 @@ public class GridWorlds {
         GridWorld environment = new GridWorld("center-block", grid, map);
 
         // Initialize tasks
-        environment.addGoal("Top",4, 4);
-        environment.addGoal("Right",8, 8);
+        environment.addGoal("Top",0, 4);
+        environment.addGoal("Right",4, 8);
 
         return environment;
     }
@@ -199,8 +199,8 @@ public class GridWorlds {
         GridWorld environment = new GridWorld("center-wall", grid, map);
 
         // Initialize tasks
-        environment.addGoal("Left", 8, 0);
-        environment.addGoal("Right", 8, 8);
+        environment.addGoal("Left", 0, 0);
+        environment.addGoal("Right", 0, 8);
 
         return environment;
     }
