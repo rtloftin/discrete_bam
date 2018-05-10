@@ -23,9 +23,11 @@ public class AnalysisMain {
     public static void main(String[] args) throws IOException, JSONException {
 
         // Load data
-        // Path root = Paths.get("C:\\Users\\Tyler\\Desktop\\users_4_12");
-        Path root = Paths.get("C:\\Users\\Tyler\\Desktop\\test_users_4_27\\web");
-        DataSet data = DataSet.load(root, EventDecoder.compressedJSON());
+        Path root = Paths.get("C:\\Users\\Tyler\\Desktop\\users_4_12");
+        DataSet data = DataSet.load(root, EventDecoder.JSON());
+
+        // Path root = Paths.get("C:\\Users\\Tyler\\Desktop\\BAM - NIPS 2018\\human\\web_study_5_9\\web");
+        // DataSet data = DataSet.load(root, EventDecoder.compressedJSON());
 
         // Print number of users
         System.out.println("total participants: " + data.participants().size());

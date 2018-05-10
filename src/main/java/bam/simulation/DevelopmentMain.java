@@ -44,7 +44,8 @@ public class DevelopmentMain {
 
         Util.setPreference("root", root.get().getPath());
 
-        goalTest(root.get());
+        combinedTest(root.get());
+        // goalTest(root.get());
         // commonTest(root.get());
         // feedbackTest(root.get());
     }
@@ -244,6 +245,87 @@ public class DevelopmentMain {
                 .build();
 
 
+
+        // Run experiment
+        experiment.run(folder);
+    }
+
+    private static void combinedTest(File root) throws Exception {
+        File folder = Util.stampedFolder("combined_test", root);
+
+        Environment center_block = GridWorlds.centerBlock(NavGrid.FOUR);
+        Environment center_wall = GridWorlds.centerWall(NavGrid.FOUR);
+        Environment three_rooms = GridWorlds.threeRooms(NavGrid.FOUR);
+        Environment two_rooms = GridWorlds.twoRooms();
+        Environment doors = GridWorlds.doors();
+
+        Environment flip = GravityWorlds.flip();
+        Environment medium_flip = GravityWorlds.medium_flip();
+        Environment choices = GravityWorlds.choices();
+        Environment wall = GravityWorlds.wall();
+
+        Environment two_fields = FarmWorlds.twoFields();
+        Environment three_fields = FarmWorlds.threeFields();
+
+        // Action Model
+        ActionModel action_model = NormalizedActionModel.beta(1.0);
+
+        // Feedback Model
+        FeedbackModel feedback_model = ASABL.builder().build();
+
+        // Task source
+        Variational task_source = PointDensity.builder()
+                .optimization(ClippedMomentum.with(0.01, 0.7, 0.1))
+                .build();
+
+        // Initialize BAM algorithm
+        Algorithm bam = BAM.builder()
+                .taskSource(task_source)
+                .dynamicsOptimization(ClippedMomentum.with(1.0, 0.7, 0.1))
+                .planningAlgorithm(BoltzmannPlanner.algorithm( 1.0))
+                .actionModel(action_model)
+                .taskUpdates(20)
+                .dynamicsUpdates(20)
+                .emUpdates(10)
+                .useTransitions(true)
+                .build();
+
+        // Initialize model-based algorithm
+        Algorithm model = ModelBased.builder()
+                .taskSource(task_source)
+                .dynamicsOptimization(ClippedMomentum.with(1.0, 0.7, 0.1))
+                .planningAlgorithm(BoltzmannPlanner.algorithm(1.0))
+                .actionModel(action_model)
+                .taskUpdates(200)
+                .dynamicsUpdates(200)
+                .build();
+
+        // Initialize cloning algorithm
+        Algorithm cloning = Cloning.builder()
+                .taskSource(task_source)
+                .actionModel(action_model)
+                .numUpdates(200)
+                .build();
+
+        Algorithm ml_irl = MLIRL.builder()
+                .taskSource(task_source)
+                .planningAlgorithm(BoltzmannPlanner.algorithm(1.0))
+                .actionModel(action_model)
+                .taskUpdates(200)
+                .build();
+
+        // Initialize experiment
+        MultiTaskCombinedExperiment experiment = MultiTaskCombinedExperiment.builder()
+                .environments(center_wall, three_rooms, two_rooms, doors)
+                // .environments(medium_flip, choices)
+                // .environments(two_fields, three_fields)
+                .algorithms(bam, model, cloning, ml_irl)
+                .feedbackModel(feedback_model)
+                .numSessions(50)
+                .numEpisodes(10)
+                .evaluationEpisodes(50)
+                .finalNoop(true)
+                .build();
 
         // Run experiment
         experiment.run(folder);

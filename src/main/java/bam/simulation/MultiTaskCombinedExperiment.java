@@ -17,18 +17,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.ThreadLocalRandom;
 
-/**
- * Used to conduct experiments in which
- * the algorithms is trained to perform multiple
- * tasks through demonstration.  Records
- * performance as a function of the number
- * of demonstrations, as well as the
- * number of demonstrations required
- * before the algorithms's policy is optimal
- *
- * Created by Tyler on 10/9/2017.
- */
-public class MultiTaskFeedbackExperiment {
+public class MultiTaskCombinedExperiment {
 
     public static Builder builder() {
         return new Builder();
@@ -41,8 +30,10 @@ public class MultiTaskFeedbackExperiment {
         private FeedbackModel feedback_model = null;
 
         private int num_sessions = 50;
-        private int training_episodes = 20;
+        private int num_episodes = 20;
         private int evaluation_episodes = 50;
+
+        private boolean final_noop = true;
 
         private Builder() {}
 
@@ -70,8 +61,8 @@ public class MultiTaskFeedbackExperiment {
             return this;
         }
 
-        public Builder trainingEpisodes(int training_episodes) {
-            this.training_episodes = training_episodes;
+        public Builder numEpisodes(int num_episodes) {
+            this.num_episodes = num_episodes;
 
             return this;
         }
@@ -82,34 +73,45 @@ public class MultiTaskFeedbackExperiment {
             return this;
         }
 
-        public MultiTaskFeedbackExperiment build() {
+        public Builder finalNoop(boolean final_noop) {
+            this.final_noop = final_noop;
+
+            return this;
+        }
+
+        public MultiTaskCombinedExperiment build() {
             if(null == environments)
                 throw new RuntimeException("Dumbass!!! - no environments specified");
             if(null == algorithms)
                 throw new RuntimeException("Dumbass!!! - no algorithms specified");
+            if(null == feedback_model)
+                throw new RuntimeException("Dumbass!!! - no algorithms specified");
 
-            return new MultiTaskFeedbackExperiment(this);
+            return new MultiTaskCombinedExperiment(this);
         }
     }
 
-    private final Environment[] environments;
-    private final Algorithm[] algorithms;
+    private Environment[] environments;
+    private Algorithm[] algorithms;
 
     private final FeedbackModel feedback_model;
 
-    private final int num_sessions;
-    private final int training_episodes;
-    private final int evaluation_episodes;
+    private int num_sessions;
+    private int num_episodes;
+    private int evaluation_episodes;
+
+    private boolean final_noop;
 
     private ExecutorService pool;
 
-    private MultiTaskFeedbackExperiment(Builder builder) {
+    private MultiTaskCombinedExperiment(Builder builder) {
         this.environments = builder.environments;
         this.algorithms = builder.algorithms;
         this.feedback_model = builder.feedback_model;
         this.num_sessions = builder.num_sessions;
-        this.training_episodes = builder.training_episodes;
+        this.num_episodes = builder.num_episodes;
         this.evaluation_episodes = builder.evaluation_episodes;
+        this.final_noop = builder.final_noop;
 
         pool = Executors.newCachedThreadPool();
     }
@@ -130,10 +132,55 @@ public class MultiTaskFeedbackExperiment {
         // Initialize session
         Session session = Session.with(agent);
 
-        // Generate feedback data
-        for(int episode = 0; episode < training_episodes; ++episode) {
+        // Generate data
+        for(int demonstration = 0; demonstration < num_episodes; ++demonstration) {
 
-            // One demonstration for each task
+            // Generate demonstration data
+            for(Task task : environment.tasks()) {
+
+                // Get the agent for the current task
+                ExpertPolicy expert = experts.get(task.name());
+
+                // Tell the agent what the current task is
+                agent.task(task.name());
+
+                // Get initial state
+                int state = task.initial(random);
+
+                // Generate trajectory
+                for(int step = 0; step < environment.dynamics().depth(); ++step) {
+
+                    // Get next action
+                    int action = expert.action(state, random);
+                    agent.observe(TeacherAction.of(state, action));
+
+                    // Update state
+                    int next_state = dynamics.transition(state, action, random);
+                    agent.observe(StateTransition.of(state, action, next_state));
+                    state = next_state;
+
+                    // Check if goal state
+                    if(task.reward(state) > 0.0) {
+
+                        // Do the final noop if necessary
+                        if(final_noop) {
+                            action = expert.action(state, random);
+                            agent.observe(TeacherAction.of(state, action));
+
+                            next_state = dynamics.transition(state, action, random);
+                            agent.observe(StateTransition.of(state, action, next_state));
+                        }
+
+                        // End demonstration early
+                        break;
+                    }
+                }
+            }
+
+            // Integrate the demonstrations
+            agent.integrate();
+
+            // Generate feedback data
             for(Task task : environment.tasks()) {
 
                 // Get the agent for the current task
@@ -161,7 +208,7 @@ public class MultiTaskFeedbackExperiment {
                 }
             }
 
-            // Integrate the new demonstrations
+            // Integrate the feedback
             agent.integrate();
 
             // Evaluate policy
@@ -170,7 +217,7 @@ public class MultiTaskFeedbackExperiment {
             for(Task task : environment.tasks()) {
                 agent.task(task.name());
 
-                for(int evaluation = 0; evaluation < evaluation_episodes; ++evaluation)
+                for(int episode = 0; episode < evaluation_episodes; ++episode)
                     performance += dynamics
                             .simulate(agent, task, task.initial(random), dynamics.depth(), random);
             }
@@ -286,11 +333,12 @@ public class MultiTaskFeedbackExperiment {
             envs.put(environment.serialize());
 
         JSONObject json = new JSONObject()
-                .put("name", "multitask feedback experiment")
+                .put("name", "multitask experiment")
                 .put("class", this.getClass().getCanonicalName())
                 .put("num sessions", num_sessions)
-                .put("training episodes", training_episodes)
+                .put("num episodes", num_episodes)
                 .put("evaluation episodes", evaluation_episodes)
+                .put("final noop", final_noop)
                 .put("algorithms", algs)
                 .put("environments", envs)
                 .put("feedback model", feedback_model.serialize());
