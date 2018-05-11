@@ -8,10 +8,7 @@ import bam.domains.ExpertBehavior;
 import bam.domains.RandomBehavior;
 import bam.domains.Task;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
 
 public class Performance {
@@ -24,6 +21,8 @@ public class Performance {
 
         private final List<? extends Task> tasks;
 
+        private final Random random;
+
         private final Map<String, Double> random_baselines;
         private final Map<String, Double> expert_baselines;
 
@@ -34,69 +33,70 @@ public class Performance {
 
             this.tasks = tasks;
 
+            this.random = ThreadLocalRandom.current();
+
             // Compute random and expert baselines
-            Behavior random = RandomBehavior.with(environment, tasks);
+            Behavior baseline = RandomBehavior.with(environment, tasks);
             Behavior expert = ExpertBehavior.with(environment, tasks);
 
             random_baselines = new HashMap<>();
             expert_baselines = new HashMap<>();
 
+            // Compute random baselines
             for(Task task : tasks) {
-                Policy policy = random.policy(task.name());
+                Policy policy = baseline.policy(task.name());
                 double value  = 0.0;
 
-                for(int episode = 0; episode < episodes; ++episode) {
-                    int start = task.initial(ThreadLocalRandom.current());
-                    value += dynamics.simulate(policy, task, start, depth, ThreadLocalRandom.current());
-                }
+                for(int episode = 0; episode < episodes; ++episode)
+                    value += dynamics.simulate(policy, task, task.initial(random), depth, random);
 
-                random_baselines.put(task.name(), value / episodes);
+                random_baselines.put(task.name(), (value / episodes));
             }
 
+            // Compute expert baselines
             for(Task task : tasks) {
                 Policy policy = expert.policy(task.name());
                 double value  = 0.0;
 
-                for(int episode = 0; episode < episodes; ++episode) {
-                    int start = task.initial(ThreadLocalRandom.current());
-                    value += dynamics.simulate(policy, task, start, depth, ThreadLocalRandom.current());
-                }
+                for(int episode = 0; episode < episodes; ++episode)
+                    value += dynamics.simulate(policy, task, task.initial(random), depth, random);
 
-                expert_baselines.put(task.name(), value / episodes);
+                expert_baselines.put(task.name(), (value / episodes));
             }
         }
 
         Performance of(Behavior behavior) {
-            double mean = 0.0;
-            double trained_mean = 0.0;
+            double ratio = 0.0;
+            double trained_ratio = 0.0;
 
-            Map<String, Double> task_means = new HashMap<>();
+            Map<String, Double> task_ratios = new HashMap<>();
 
             for(Task task : tasks) {
+                double random_baseline = random_baselines.get(task.name());
+                double expert_baseline = expert_baselines.get(task.name());
+
                 if(behavior.has(task.name())) {
                     Policy policy = behavior.policy(task.name());
                     double value = 0.0;
 
-                    for(int episode = 0; episode < episodes; ++episode) {
-                        int start = task.initial(ThreadLocalRandom.current());
-                        value += dynamics.simulate(policy, task, start, depth, ThreadLocalRandom.current());
-                    }
+                    for(int episode = 0; episode < episodes; ++episode)
+                        value += dynamics.simulate(policy, task, task.initial(random), depth, random);
 
-                    value /= episodes * depth;
+                    value /= (episodes * expert_baseline);
 
-                    mean += value;
-                    trained_mean += value;
+                    ratio += value;
+                    trained_ratio += value;
 
-                    task_means.put(task.name(), value);
+                    task_ratios.put(task.name(), value);
                 } else {
-                    mean += random_baselines.get(task.name());
+                    ratio += (random_baseline / expert_baseline);
                 }
             }
 
-            mean /= tasks.size();
-            trained_mean /= Math.max(1.0, task_means.size());
+            ratio /= tasks.size();
+            trained_ratio /= Math.max(1.0, task_ratios.size());
 
-            return new Performance(mean, trained_mean, task_means);
+            return new Performance(ratio, trained_ratio, task_ratios);
         }
 
         public Set<String> tasks() {
@@ -120,30 +120,30 @@ public class Performance {
         return new Evaluation(episodes, environment, List.of(tasks));
     }
 
-    private final double mean;
-    private final double trained_mean;
+    private final double ratio;
+    private final double trained_ratio;
 
-    private final Map<String, Double> task_means;
+    private final Map<String, Double> task_ratios;
 
-    private Performance(double mean, double trained_mean, Map<String, Double> task_means) {
-        this.mean = mean;
-        this.trained_mean = trained_mean;
-        this.task_means = task_means;
+    private Performance(double ratio, double trained_ratio, Map<String, Double> task_ratios) {
+        this.ratio = ratio;
+        this.trained_ratio = trained_ratio;
+        this.task_ratios = task_ratios;
     }
 
-    public double mean() {
-        return mean;
+    public double ratio() {
+        return ratio;
     }
 
-    public double trainedMean() {
-        return trained_mean;
+    public double trainedRatio() {
+        return trained_ratio;
     }
 
     public boolean trained(String task) {
-        return task_means.containsKey(task);
+        return task_ratios.containsKey(task);
     }
 
-    public double mean(String task) {
-        return task_means.getOrDefault(task, 0.0);
+    public double ratio(String task) {
+        return task_ratios.getOrDefault(task, 0.0);
     }
 }

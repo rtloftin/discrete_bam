@@ -43,7 +43,10 @@ public interface TimeScale {
                     String type = event.getString("type");
 
                     if(type.equals("take-action")) {
-                        is_demonstration = event.getJSONObject("data").getBoolean("on-task");
+                        if(event.has("data"))
+                            is_demonstration = event.getJSONObject("data").getBoolean("on-task");
+                        else
+                            is_demonstration = event.getBoolean("on-task");
                     } else {
                         if(is_demonstration && type.equals("integrate"))
                             values.add(session.annotation(i));

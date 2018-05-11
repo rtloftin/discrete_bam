@@ -104,5 +104,25 @@ public interface Dynamics {
         }
 
         return total;
+
+        // Alternative version that stops at goals
+        /* double total = 0.0;
+
+        int state = start;
+        int step = 0;
+
+        while(step < steps) {
+            state = transition(state, policy.action(state, random), random);
+
+            double reward = rewards.reward(state);
+            total += reward;
+
+            if(reward > 0.0)
+                break;
+
+            ++step;
+        }
+
+        return total / step; */
     }
 }

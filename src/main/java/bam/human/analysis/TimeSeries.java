@@ -10,7 +10,7 @@ import java.util.List;
  * scale such as actions, demonstrations or
  * wall-clock time.
  */
-public class TimeSeries<T> implements Iterable<TimeSeries<T>.Entry> {
+public class TimeSeries<T> implements Iterable<List<T>> {
 
     public class Entry {
         private final List<T> data;
@@ -34,27 +34,18 @@ public class TimeSeries<T> implements Iterable<TimeSeries<T>.Entry> {
         }
     }
 
-    private final List<Entry> entries;
+    private final List<List<T>> sessions;
+    private final int steps;
 
-    private final TimeScale time_scale;
-    private final int start;
-    private final int end;
+    private TimeSeries(List<List<T>> sessions) {
+        this.sessions = sessions;
+        int max_steps = 0;
 
-    private TimeSeries(List<List<T>> sessions, TimeScale time_scale) {
-        this.entries = new ArrayList<>();
+        for (List<T> session : sessions)
+            if(session.size() > max_steps)
+                max_steps = session.size();
 
-        for (List<T> session : sessions) {
-            for (int i = 0; i < session.size(); ++i) {
-                if (entries.size() <= i)
-                    entries.add(this.new Entry(time_scale.time(i)));
-
-                entries.get(i).add(session.get(i));
-            }
-        }
-
-        this.time_scale = time_scale;
-        this.start = time_scale.time(0);
-        this.end = time_scale.time(Math.max(entries.size() - 1, 0));
+        this.steps = max_steps;
     }
 
     public static <T> TimeSeries of(List<AnnotatedSession<T>> sessions, TimeScale time_scale) {
@@ -63,31 +54,21 @@ public class TimeSeries<T> implements Iterable<TimeSeries<T>.Entry> {
         for (AnnotatedSession<T> session : sessions)
             series.add(time_scale.of(session));
 
-        return new TimeSeries(series, time_scale);
+        return new TimeSeries(series);
     }
 
-    public int start() {
-        return start;
-    }
-
-    public int end() {
-        return end;
-    }
-
-    public int time(int index) {
-        return time_scale.time(index);
-    }
+    public int steps() { return steps; }
 
     public int size() {
-        return entries.size();
+        return sessions.size();
     }
 
-    public Entry get(int index) {
-        return entries.get(index);
+    public List<T> get(int index) {
+        return sessions.get(index);
     }
 
     @Override
-    public Iterator<TimeSeries<T>.Entry> iterator() {
-        return entries.iterator();
+    public Iterator<List<T>> iterator() {
+        return sessions.iterator();
     }
 }

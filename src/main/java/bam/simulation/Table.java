@@ -92,6 +92,7 @@ public class Table {
     public void csv(File folder, String name) throws IOException {
 
         // Create file
+        folder.mkdirs();
         PrintStream file = new PrintStream(new File(folder, name));
 
         // Print header
@@ -112,6 +113,7 @@ public class Table {
     public void table(File folder, String name) throws IOException {
 
         // Create file
+        folder.mkdirs();
         PrintStream file = new PrintStream(new File(folder, name));
 
         // Print header
