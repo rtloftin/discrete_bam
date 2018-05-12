@@ -28,11 +28,14 @@ public class AnalysisMain {
     public static void main(String[] args) throws IOException, JSONException {
 
         // Load data
-        Path root = Paths.get("C:\\Users\\Tyler\\Desktop\\BAM - NIPS 2018\\human\\pilot_4_12");
-        DataSet data = DataSet.load(root, EventDecoder.JSON());
+        // Path root = Paths.get("C:\\Users\\Tyler\\Desktop\\BAM - NIPS 2018\\human\\pilot_4_12");
+        // DataSet data = DataSet.load(root, EventDecoder.JSON());
 
         // Path root = Paths.get("C:\\Users\\Tyler\\Desktop\\BAM - NIPS 2018\\human\\web_study_5_9\\web");
         // DataSet data = DataSet.load(root, EventDecoder.compressedJSON());
+
+        Path root = Paths.get("C:\\Users\\Tyler\\Desktop\\BAM - NIPS 2018\\human\\mturk_study_5_11\\mturk");
+        DataSet data = DataSet.load(root, EventDecoder.compressedJSON());
 
         // Print number of users
         System.out.println("total participants: " + data.participants().size());
@@ -45,8 +48,8 @@ public class AnalysisMain {
         // Build list of environments to test
         Map<String, Environment> environments = new Hashtable<>();
 
-        environments.put("two-rooms", GridWorlds.twoRooms());
-        environments.put("doors", GridWorlds.doors());
+        // environments.put("two-rooms", GridWorlds.twoRooms());
+        // environments.put("doors", GridWorlds.doors());
 
         // environments.put("two-rooms", GridWorlds.twoRooms());
         // environments.put("doors", GridWorlds.doors());
