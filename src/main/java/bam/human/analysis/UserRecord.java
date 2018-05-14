@@ -1,11 +1,17 @@
 package bam.human.analysis;
 
+import bam.algorithms.optimization.Optimization;
 import org.json.JSONException;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.nio.Buffer;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -21,12 +27,16 @@ public class UserRecord {
     // The data from all the experimental sessions
     private SessionRecords sessions;
 
-    // The ID number for this user -- may eventually replace with a unique ID code that we use for verification
-    private int id;
+    // Verification code
+    private String code;
 
-    private UserRecord(SessionRecords sessions, int id)  {
+    // The number of seconds required to complete the study
+    private double duration;
+
+    private UserRecord(SessionRecords sessions, String code, double duration)  {
         this.sessions = sessions;
-        this.id = id;
+        this.code = code;
+        this.duration = duration;
     }
 
     public static Optional<UserRecord> load(Path root, EventDecoder decoder) {
@@ -39,13 +49,45 @@ public class UserRecord {
         }
 
         try {
+
+            // Load sessions
             DirectoryStream<Path> directories = Files.newDirectoryStream(root.resolve("sessions"));
             List<SessionRecord> sessions = new ArrayList<>();
 
             for (Path directory : directories)
                 sessions.add(SessionRecord.load(directory, decoder));
 
-            return Optional.of(new UserRecord(SessionRecords.of(sessions), id));
+            // Get duration
+            double duration = 0.0;
+
+            BufferedReader log = new BufferedReader(new InputStreamReader(Files.newInputStream(root.resolve("log"))));
+            String first = log.readLine();
+            String last = first;
+
+            if(null != first) {
+                String line = log.readLine();
+
+                while (null != line) {
+                    last = line;
+                    line = log.readLine();
+                }
+
+                Instant start = Instant.parse(first.split("\\s\\|\\s")[0]);
+                Instant end = Instant.parse(last.split("\\s\\|\\s")[0]);
+
+                duration = Duration.between(start, end).getSeconds();
+            }
+
+            // Get verification code if it exists
+            Path code_path = root.resolve("code");
+            String code = null;
+
+            if(Files.exists(code_path)) {
+                BufferedReader code_file = new BufferedReader(new InputStreamReader(Files.newInputStream(code_path)));
+                code = code_file.readLine();
+            }
+
+            return Optional.of(new UserRecord(SessionRecords.of(sessions), code, duration));
         } catch(IOException|JSONException e) {
             System.out.println("Could not load user " + id + ", error: " + e.getMessage());
 
@@ -57,7 +99,11 @@ public class UserRecord {
         return sessions;
     }
 
-    public int id() {
-        return id;
+    public String code() {
+        return code;
+    }
+
+    public double duration() {
+        return duration;
     }
 }

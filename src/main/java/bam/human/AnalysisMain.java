@@ -34,11 +34,31 @@ public class AnalysisMain {
         // Path root = Paths.get("C:\\Users\\Tyler\\Desktop\\BAM - NIPS 2018\\human\\web_study_5_9\\web");
         // DataSet data = DataSet.load(root, EventDecoder.compressedJSON());
 
-        Path root = Paths.get("C:\\Users\\Tyler\\Desktop\\BAM - NIPS 2018\\human\\mturk_study_5_11\\mturk");
+        // Path root = Paths.get("C:\\Users\\Tyler\\Desktop\\BAM - NIPS 2018\\human\\mturk_study_5_11\\mturk");
+        // DataSet data = DataSet.load(root, EventDecoder.compressedJSON());
+
+        Path root = Paths.get("C:\\Users\\Tyler\\Desktop\\BAM - NIPS 2018\\human\\mturk_study_5_14\\mturk");
         DataSet data = DataSet.load(root, EventDecoder.compressedJSON());
 
-        // Print number of users
-        System.out.println("total participants: " + data.participants().size());
+        // Filter out users who didn't complete the tutorial
+        UserRecords participants = data.participants().filter(UserFilter.completed(2));
+
+        // Compute user statistics
+        double mean_sessions = 0.0;
+        double mean_duration = 0.0;
+
+        for(UserRecord user : participants) {
+            mean_sessions += user.sessions().size() - 1.0;
+            mean_duration += user.duration();
+        }
+
+        mean_sessions /= participants.size();
+        mean_duration /= participants.size();
+
+        // Print user statistics
+        System.out.println("Number of participants: " + participants.size());
+        System.out.println("Average number of sessions trained: " + mean_sessions);
+        System.out.println("Average study duration: " + mean_duration + " seconds");
 
         // Filter out incomplete and tutorial sessions
         SessionRecords all_complete = data.participants().filter(SessionFilter.tutorial(), SessionFilter.complete());
@@ -51,10 +71,10 @@ public class AnalysisMain {
         // environments.put("two-rooms", GridWorlds.twoRooms());
         // environments.put("doors", GridWorlds.doors());
 
-        // environments.put("two-rooms", GridWorlds.twoRooms());
-        // environments.put("doors", GridWorlds.doors());
-        // environments.put("two-fields", FarmWorlds.twoFields());
-        // environments.put("three-fields", FarmWorlds.threeFields());
+        environments.put("two-rooms", GridWorlds.twoRooms());
+        environments.put("doors", GridWorlds.doors());
+        environments.put("two-fields", FarmWorlds.twoFields());
+        environments.put("three-fields", FarmWorlds.threeFields());
 
         // Process data for each environment
         Path results = root.resolve("analysis");
