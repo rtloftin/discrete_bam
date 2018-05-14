@@ -130,7 +130,9 @@ public class WebsocketConnection extends AbstractReceiveListener implements Conn
     public void close() {
         if(CLOSED != status) {
             status = CLOSED;
-            timer.cancel();
+
+            if(null != timer)
+                timer.cancel();
 
             if(channel.isOpen()) {
                 try {
