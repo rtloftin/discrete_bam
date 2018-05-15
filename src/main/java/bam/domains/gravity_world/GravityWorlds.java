@@ -183,6 +183,36 @@ public class GravityWorlds {
         return environment;
     }
 
+    public static GravityWorld big_wall() {
+
+        // Initialize navigation grid
+        NavGrid grid = new NavGrid(7, 8, NavGrid.FOUR);
+
+        // Set cell colors
+        Colors[][] colors = new Colors[grid.height()][grid.width()];
+
+        for(int row = 0; row < grid.height(); ++row)
+            Arrays.fill(colors[row], Colors.CLEAR);
+
+        colors[2][3] = Colors.GREEN;
+        colors[3][3] = Colors.GREEN;
+        colors[4][3] = Colors.GREEN;
+        colors[5][3] = Colors.GREEN;
+
+        // Set gravity mapping
+        Gravity[] gravity = new Gravity[Colors.values().length];
+        gravity[Colors.GREEN.ordinal()] = Gravity.EAST;
+
+        // Build environment
+        GravityWorld environment = new GravityWorld("big-wall", grid, colors, gravity);
+
+        // Define goals
+        environment.addGoal("Left", 4, 0);
+        environment.addGoal("Right", 4, 6);
+
+        return environment;
+    }
+
     public static GravityWorld choices() {
 
         // Initialize navigation grid
@@ -216,4 +246,35 @@ public class GravityWorlds {
         return environment;
     }
 
+    public static GravityWorld more_choices() {
+        // Initialize navigation grid
+        NavGrid grid = new NavGrid(15, 4, NavGrid.FOUR);
+
+        // Set cell colors
+        Colors[][] colors = new Colors[grid.height()][grid.width()];
+
+        for(int row = 0; row < grid.height(); ++row)
+            Arrays.fill(colors[row], Colors.CLEAR);
+
+        colors[0][6] = Colors.ORANGE;
+        colors[0][7] = Colors.ORANGE;
+
+        colors[0][0] = Colors.GREEN;
+        colors[0][14] = Colors.PURPLE;
+
+        // Set gravity mapping
+        Gravity[] gravity = new Gravity[Colors.values().length];
+        gravity[Colors.ORANGE.ordinal()] = Gravity.SOUTH;
+        gravity[Colors.GREEN.ordinal()] = Gravity.NORTH;
+        gravity[Colors.PURPLE.ordinal()] = Gravity.NORTH;
+
+        // Build environment
+        GravityWorld environment = new GravityWorld("more-choices", grid, colors, gravity);
+
+        // Define goals
+        environment.addGoal("Top Left", 3, 0);
+        environment.addGoal("Top Right", 3, 14);
+
+        return environment;
+    }
 }

@@ -44,8 +44,8 @@ public class DevelopmentMain {
 
         Util.setPreference("root", root.get().getPath());
 
-        fullTest(root.get());
-        // combinedTest(root.get());
+        // fullTest(root.get());
+        combinedTest(root.get());
         // goalTest(root.get());
         // commonTest(root.get());
         // feedbackTest(root.get());
@@ -264,6 +264,8 @@ public class DevelopmentMain {
         Environment flip = GravityWorlds.flip();
         Environment medium_flip = GravityWorlds.medium_flip();
         Environment choices = GravityWorlds.choices();
+        Environment more_choices = GravityWorlds.more_choices();
+        Environment big_wall = GravityWorlds.big_wall();
         Environment wall = GravityWorlds.wall();
 
         Environment two_fields = FarmWorlds.twoFields();
@@ -309,11 +311,13 @@ public class DevelopmentMain {
                 .numUpdates(200)
                 .build();
 
-        Algorithm ml_irl = MLIRL.builder()
+        Algorithm common_reward = CommonReward.builder()
                 .taskSource(task_source)
+                .dynamicsOptimization(ClippedMomentum.with(1.0, 0.7, 0.1))
                 .planningAlgorithm(BoltzmannPlanner.algorithm(1.0))
                 .actionModel(action_model)
                 .taskUpdates(200)
+                .dynamicsUpdates(200)
                 .build();
 
                 // Initialize experiment
@@ -321,9 +325,10 @@ public class DevelopmentMain {
                 // .environments(center_block, center_wall, three_rooms, two_rooms, doors)
                 // .environments(center_block, center_wall)
                 // .environments(flip, medium_flip, choices, wall)
-                .environments(medium_flip, choices)
+                // .environments(medium_flip, choices)
+                .environments(more_choices, big_wall)
                 // .environments(two_fields, three_fields)
-                .algorithms(bam, model, cloning, ml_irl)
+                .algorithms(bam, model, cloning, common_reward)
                 .numSessions(50)
                 .maxDemonstrations(10)
                 .evaluationEpisodes(50)
@@ -349,6 +354,8 @@ public class DevelopmentMain {
         Environment medium_flip = GravityWorlds.medium_flip();
         Environment choices = GravityWorlds.choices();
         Environment wall = GravityWorlds.wall();
+        Environment more_choices = GravityWorlds.more_choices();
+        Environment big_wall = GravityWorlds.big_wall();
 
         Environment two_fields = FarmWorlds.twoFields();
         Environment three_fields = FarmWorlds.threeFields();
@@ -370,6 +377,7 @@ public class DevelopmentMain {
                 .dynamicsOptimization(ClippedMomentum.with(1.0, 0.7, 0.1))
                 .planningAlgorithm(BoltzmannPlanner.algorithm( 1.0))
                 .actionModel(action_model)
+                .feedbackModel(feedback_model)
                 .taskUpdates(20)
                 .dynamicsUpdates(20)
                 .emUpdates(10)
@@ -382,6 +390,7 @@ public class DevelopmentMain {
                 .dynamicsOptimization(ClippedMomentum.with(1.0, 0.7, 0.1))
                 .planningAlgorithm(BoltzmannPlanner.algorithm(1.0))
                 .actionModel(action_model)
+                .feedbackModel(feedback_model)
                 .taskUpdates(200)
                 .dynamicsUpdates(200)
                 .build();
@@ -390,22 +399,16 @@ public class DevelopmentMain {
         Algorithm cloning = Cloning.builder()
                 .taskSource(task_source)
                 .actionModel(action_model)
+                .feedbackModel(feedback_model)
                 .numUpdates(200)
-                .build();
-
-        Algorithm ml_irl = MLIRL.builder()
-                .taskSource(task_source)
-                .planningAlgorithm(BoltzmannPlanner.algorithm(1.0))
-                .actionModel(action_model)
-                .taskUpdates(200)
                 .build();
 
         // Initialize experiment
         MultiTaskCombinedExperiment experiment = MultiTaskCombinedExperiment.builder()
                 // .environments(center_wall, three_rooms, two_rooms, doors)
-                // .environments(medium_flip, choices)
-                .environments(two_fields, three_fields)
-                .algorithms(bam, model, cloning, ml_irl)
+                .environments(medium_flip, choices, more_choices, big_wall)
+                // .environments(two_fields, three_fields)
+                .algorithms(bam, model, cloning)
                 .feedbackModel(feedback_model)
                 .numSessions(50)
                 .numEpisodes(10)
@@ -490,9 +493,10 @@ public class DevelopmentMain {
         // Initialize experiment
         MultiTaskGoalExperiment experiment = MultiTaskGoalExperiment.builder()
                 // .environments(center_block, center_wall, three_rooms, two_rooms, doors)
-                .environments(center_block, center_wall)
+                // .environments(center_block, center_wall)
                 // .environments(flip, medium_flip, choices, wall)
-                // .environments(two_fields, three_fields)
+                // .environments(medium_flip, choices)
+                .environments(two_fields, three_fields)
                 .algorithms(bam, model, common_reward, common_intent)
                 .numSessions(50)
                 .maxDemonstrations(10)
