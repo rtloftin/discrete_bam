@@ -406,8 +406,8 @@ public class DevelopmentMain {
         // Initialize experiment
         MultiTaskCombinedExperiment experiment = MultiTaskCombinedExperiment.builder()
                 // .environments(center_wall, three_rooms, two_rooms, doors)
-                .environments(medium_flip, choices, more_choices, big_wall)
-                // .environments(two_fields, three_fields)
+                // .environments(medium_flip, choices, more_choices, big_wall)
+                .environments(two_fields, three_fields)
                 .algorithms(bam, model, cloning)
                 .feedbackModel(feedback_model)
                 .numSessions(50)

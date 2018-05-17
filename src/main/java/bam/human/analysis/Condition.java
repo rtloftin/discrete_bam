@@ -206,24 +206,21 @@ public class Condition {
                 Table.Row row_all = success_all.newRow().add(condition.name);
                 Table.Row row_trained = success_trained.newRow().add(condition.name);
 
-                int size = session.size();
-
                 // Overall success
                 for (int level = 0; level < thresholds.length; ++level) {
-                    if(0 != size && session.get(size- 1).ratio() >= thresholds[level]) {
-                        row_all.add("TRUE");
-                    } else {
-                        row_all.add("FALSE");
-                    }
-                }
+                    boolean successful_all = false;
+                    boolean successful_trained = false;
 
-                // Trained task success
-                for (int level = 0; level < thresholds.length; ++level) {
-                    if(0 != size && session.get(size - 1).trainedRatio() >= thresholds[level]) {
-                        row_trained.add("TRUE");
-                    } else {
-                        row_trained.add("FALSE");
+                    for(Performance performance : session) {
+                        if (performance.ratio() >= thresholds[level])
+                            successful_all = true;
+                        if (performance.trainedRatio() >= thresholds[level])
+                            successful_trained = true;
                     }
+
+                    row_all.add(successful_all ? "TRUE" : "FALSE" );
+                    row_trained.add(successful_trained ? "TRUE" : "FALSE" );
+
                 }
             }
         }

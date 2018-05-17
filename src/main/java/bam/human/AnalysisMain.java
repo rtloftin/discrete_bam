@@ -37,11 +37,17 @@ public class AnalysisMain {
         // Path root = Paths.get("C:\\Users\\Tyler\\Desktop\\BAM - NIPS 2018\\human\\mturk_study_5_11\\mturk");
         // DataSet data = DataSet.load(root, EventDecoder.compressedJSON());
 
-        Path root = Paths.get("C:\\Users\\Tyler\\Desktop\\BAM - NIPS 2018\\human\\mturk_study_5_14\\mturk");
+        // Path root = Paths.get("C:\\Users\\Tyler\\Desktop\\BAM - NIPS 2018\\human\\mturk_study_5_14\\mturk");
+        // DataSet data = DataSet.load(root, EventDecoder.compressedJSON());
+
+        Path root = Paths.get("C:\\Users\\Tyler\\Desktop\\BAM - NIPS 2018\\human\\mturk_study_5_15\\mturk");
         DataSet data = DataSet.load(root, EventDecoder.compressedJSON());
 
-        // Filter out users who didn't complete the tutorial
-        UserRecords participants = data.participants().filter(UserFilter.completed(2));
+        // Filter out users who didn't complete the tutorial, and repeated users
+        UserRecords participants = data.participants().filter(UserFilter.completed(2),
+                UserFilter.verified(root.resolve("verified")));
+
+        // UserFilter.codes("2e59a8c3-97cd-4c43-8e70-88713e035e46","d58b0e6e-52ad-4edb-9b22-1494476cb3f8")
 
         // Compute user statistics
         double mean_sessions = 0.0;
@@ -61,7 +67,7 @@ public class AnalysisMain {
         System.out.println("Average study duration: " + mean_duration + " seconds");
 
         // Filter out incomplete and tutorial sessions
-        SessionRecords all_complete = data.participants().filter(SessionFilter.tutorial(), SessionFilter.complete());
+        SessionRecords all_complete = participants.filter(SessionFilter.tutorial(), SessionFilter.complete());
 
         System.out.println("Complete experimental sessions: " + all_complete.size());
 
@@ -95,7 +101,7 @@ public class AnalysisMain {
         SessionRecords cloning_sessions = sessions.filter(SessionFilter.algorithm("Cloning"));
 
 
-        Performance.Evaluation evaluation = Performance.evaluation(500, environment);
+        Performance.Evaluation evaluation = Performance.evaluation(1000, environment);
         SessionAnnotation<Performance> performance_annotation = SessionAnnotation.performance(evaluation);
 
         List<AnnotatedSession<Performance>> bam_annotations = performance_annotation.of(bam_sessions);

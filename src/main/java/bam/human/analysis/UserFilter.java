@@ -2,6 +2,11 @@ package bam.human.analysis;
 
 import bam.human.Session;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.HashSet;
 import java.util.Hashtable;
 
@@ -38,6 +43,20 @@ public interface UserFilter {
             codes.add(code);
 
         return (UserRecord user) -> !codes.contains(user.code());
+    }
+
+    static UserFilter verified(Path codes) throws IOException {
+        BufferedReader reader = new BufferedReader(new InputStreamReader(Files.newInputStream(codes)));
+        HashSet<String> valid = new HashSet<>();
+
+        String line = reader.readLine();
+
+        while(null != line) {
+            valid.add(line);
+            line = reader.readLine();
+        }
+
+        return (UserRecord user) -> valid.contains(user.code());
     }
 
     boolean good(UserRecord user);
