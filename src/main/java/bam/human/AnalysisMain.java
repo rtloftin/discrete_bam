@@ -50,21 +50,22 @@ public class AnalysisMain {
         // UserFilter.codes("2e59a8c3-97cd-4c43-8e70-88713e035e46","d58b0e6e-52ad-4edb-9b22-1494476cb3f8")
 
         // Compute user statistics
-        double mean_sessions = 0.0;
         double mean_duration = 0.0;
+        double duration_deviation = 0.0;
 
-        for(UserRecord user : participants) {
-            mean_sessions += user.sessions().size() - 1.0;
+        for(UserRecord user : participants)
             mean_duration += user.duration();
-        }
 
-        mean_sessions /= participants.size();
         mean_duration /= participants.size();
+
+        for(UserRecord user : participants)
+            duration_deviation += (user.duration() - mean_duration) * (user.duration() - mean_duration);
+
+        duration_deviation = Math.sqrt(duration_deviation / (participants.size() - 1));
 
         // Print user statistics
         System.out.println("Number of participants: " + participants.size());
-        System.out.println("Average number of sessions trained: " + mean_sessions);
-        System.out.println("Average study duration: " + mean_duration + " seconds");
+        System.out.println("Average study duration: " + mean_duration + " seconds, std. deviation: " + duration_deviation);
 
         // Filter out incomplete and tutorial sessions
         SessionRecords all_complete = participants.filter(SessionFilter.tutorial(), SessionFilter.complete());
