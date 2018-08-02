@@ -24,7 +24,16 @@ public class SessionRecord {
 
     public final List<JSONObject> events;
 
-    private SessionRecord(Path root, EventDecoder decoder) throws IOException, JSONException {
+    public final int participant; // The ID of the participant
+    public final int agent; // Which of the seven possible sessions this is
+
+    private SessionRecord(Path root, EventDecoder decoder, int participant) throws IOException, JSONException {
+
+        // Get the participant ID
+        this.participant = participant;
+
+        // Get which of the seven possible sessions this is
+        this.agent = Integer.parseInt(root.getFileName().toString());
 
         // Get algorithm
         algorithm = new JSONObject(FileUtils.readFileToString(root.resolve("algorithm").toFile(), "UTF-8"));
@@ -36,7 +45,7 @@ public class SessionRecord {
         events = decoder.events(Files.newInputStream(root.resolve("events")));
     }
 
-    public static SessionRecord load(Path root, EventDecoder decoder) throws IOException, JSONException {
-        return new SessionRecord(root, decoder);
+    public static SessionRecord load(Path root, EventDecoder decoder, int participant) throws IOException, JSONException {
+        return new SessionRecord(root, decoder, participant);
     }
 }

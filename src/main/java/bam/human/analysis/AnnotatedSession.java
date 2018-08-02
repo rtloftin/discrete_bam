@@ -11,16 +11,19 @@ import java.util.List;
  */
 public class AnnotatedSession<T> {
 
+    public final SessionRecord session;
+
     private List<JSONObject> events;
     private List<T> annotations;
 
-    private AnnotatedSession(List<JSONObject> events, List<T> annotations) {
+    private AnnotatedSession(SessionRecord session, List<JSONObject> events, List<T> annotations) {
+        this.session = session;
         this.events = events;
         this.annotations = annotations;
     }
 
-    public static <T> AnnotatedSession<T> of(List<JSONObject> events, List<T> annotations) {
-        return new AnnotatedSession<>(events, annotations);
+    public static <T> AnnotatedSession<T> of(SessionRecord session, List<JSONObject> events, List<T> annotations) {
+        return new AnnotatedSession<>(session, events, annotations);
     }
 
     public int size() {

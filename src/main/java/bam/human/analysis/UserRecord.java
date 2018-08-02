@@ -55,7 +55,7 @@ public class UserRecord {
             List<SessionRecord> sessions = new ArrayList<>();
 
             for (Path directory : directories)
-                sessions.add(SessionRecord.load(directory, decoder));
+                sessions.add(SessionRecord.load(directory, decoder, id));
 
             // Get duration
             double duration = 0.0;

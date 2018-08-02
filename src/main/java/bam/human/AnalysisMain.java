@@ -9,6 +9,7 @@ import bam.domains.farm_world.FarmWorlds;
 import bam.domains.grid_world.GridWorld;
 import bam.domains.grid_world.GridWorlds;
 import bam.human.analysis.*;
+import bam.simulation.Table;
 import org.json.JSONException;
 
 import java.io.IOException;
@@ -22,6 +23,11 @@ import java.util.*;
  * This will select a study directory, and will
  * compute the summary statistics needed for
  * our analysis.
+ *
+ * Updated for the rebuttal to generate a single data
+ * file for each performance measure, which is used for
+ * the multi-way ANOVA, and the pairwise tests with
+ * bonferroni corrections.
  */
 public class AnalysisMain {
 
@@ -72,6 +78,149 @@ public class AnalysisMain {
 
         System.out.println("Complete experimental sessions: " + all_complete.size());
 
+        combinedEnvironments(root, all_complete);
+        // separateEnvironments(root, all_complete);
+    }
+
+    private static void combinedEnvironments(Path root, SessionRecords sessions) throws IOException {
+
+        // Build performance annotation -- now evaluates in the environment for the session
+        Map<String, Performance.Evaluation> evaluations = new Hashtable<>();
+
+        evaluations.put("two-rooms", Performance.evaluation(1000, GridWorlds.twoRooms()));
+        evaluations.put("doors", Performance.evaluation(1000, GridWorlds.doors()));
+        evaluations.put("two-fields", Performance.evaluation(1000, FarmWorlds.twoFields()));
+        evaluations.put("three-fields", Performance.evaluation(1000, FarmWorlds.threeFields()));
+
+        SessionAnnotation<Performance> performance_annotation = SessionAnnotation.performance(evaluations);
+
+        // Get analysis results directory
+        Path results = root.resolve("rebuttal_analysis");
+
+        // Annotate sessions
+        List<AnnotatedSession<Performance>> annotated_sessions = performance_annotation.of(sessions);
+
+        // Construct table header
+        List<String> columns = new LinkedList<>();
+        columns.add("\"fifty\"");
+        columns.add("\"eighty\"");
+        columns.add("\"algorithm\"");
+        columns.add("\"environment\"");
+        columns.add("\"participant\"");
+        columns.add("\"session\"");
+
+        // Record episodes required, only report 50 and 80 percent thresholds
+        Table episodes = Table.create("episodes", columns);
+        TimeScale episode = TimeScale.episodes();
+
+        for(AnnotatedSession<Performance> annotated_session : annotated_sessions) {
+
+            // Get the time scale
+            List<Performance> series = episode.of(annotated_session);
+
+            // 50 Percent
+            int step = 0;
+
+            while (step < series.size() && series.get(step).ratio() < 0.5)
+                ++step;
+
+            String fifty = "NA";
+
+            if (step < series.size())
+                fifty = Integer.toString(step + 1);
+
+            // 80 Percent
+            step = 0;
+
+            while (step < series.size() && series.get(step).ratio() < 0.8)
+                ++step;
+
+            String eighty = "NA";
+
+            if (step < series.size())
+                eighty = Integer.toString(step + 1);
+
+            // Add data row
+            Table.Row row = episodes.newRow();
+            row.add(fifty, eighty);
+            row.add(annotated_session.session.algorithm.getString("name"));
+            row.add(annotated_session.session.environment.getString("name"));
+            row.add(annotated_session.session.participant, annotated_session.session.agent);
+        }
+
+        episodes.csv(results.toFile());
+
+        // Record actions required, only report 50 and 80 percent thresholds
+        Table actions = Table.create("actions", columns);
+        TimeScale action = TimeScale.actions();
+
+        for(AnnotatedSession<Performance> annotated_session : annotated_sessions) {
+
+            // Get the time scale
+            List<Performance> series = action.of(annotated_session);
+
+            // 50 Percent
+            int step = 0;
+
+            while (step < series.size() && series.get(step).ratio() < 0.5)
+                ++step;
+
+            String fifty = "NA";
+
+            if (step < series.size())
+                fifty = Integer.toString(step + 1);
+
+            // 80 Percent
+            step = 0;
+
+            while (step < series.size() && series.get(step).ratio() < 0.8)
+                ++step;
+
+            String eighty = "NA";
+
+            if (step < series.size())
+                eighty = Integer.toString(step + 1);
+
+            // Add data row
+            Table.Row row = actions.newRow();
+            row.add(fifty, eighty);
+            row.add(annotated_session.session.algorithm.getString("name"));
+            row.add(annotated_session.session.environment.getString("name"));
+            row.add(annotated_session.session.participant, annotated_session.session.agent);
+        }
+
+        actions.csv(results.toFile());
+
+        // Record success rates, only report 50 and 80 percent thresholds, no blocking of nuisance factors
+        Table success = Table.create("success", columns);
+
+        for(AnnotatedSession<Performance> annotated_session : annotated_sessions) {
+            String fifty = "FALSE";
+            String eighty = "FALSE";
+
+            for(int i=0; i < annotated_session.size(); ++i) {
+                double ratio = annotated_session.annotation(i).ratio();
+
+                if(0.5 <= ratio)
+                    fifty = "TRUE";
+
+                if(0.8 <= ratio)
+                    eighty = "TRUE";
+            }
+
+            // Add data row
+            Table.Row row = success.newRow();
+            row.add(fifty, eighty);
+            row.add(annotated_session.session.algorithm.getString("name"));
+            row.add(annotated_session.session.environment.getString("name"));
+            row.add(annotated_session.session.participant, annotated_session.session.agent);
+        }
+
+        success.csv(results.toFile());
+    }
+
+    private static void separateEnvironments(Path root, SessionRecords all_complete) throws IOException {
+
         // Build list of environments to test
         Map<String, Environment> environments = new Hashtable<>();
 
@@ -100,7 +249,6 @@ public class AnalysisMain {
         SessionRecords bam_sessions = sessions.filter(SessionFilter.algorithm("BAM"));
         SessionRecords model_based_sessions = sessions.filter(SessionFilter.algorithm("Model-Based"));
         SessionRecords cloning_sessions = sessions.filter(SessionFilter.algorithm("Cloning"));
-
 
         Performance.Evaluation evaluation = Performance.evaluation(1000, environment);
         SessionAnnotation<Performance> performance_annotation = SessionAnnotation.performance(evaluation);
