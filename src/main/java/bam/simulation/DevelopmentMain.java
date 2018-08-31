@@ -25,6 +25,8 @@ import java.util.Optional;
 import java.util.prefs.Preferences;
 
 /**
+ * THIS IS THE FILE WE WRE ACTUALLY USING TO GENERATE SIMULATION DATA, NOT "SimulationMain.java" !!!
+ *
  * This class is the entry point for interactive experiments
  * using BAM and related algorithms.  It is intended to
  * be used while testing the code and different parameter
@@ -52,6 +54,8 @@ public class DevelopmentMain {
     }
 
     private static void cloningTest(File root) throws Exception {
+
+        // JUST EVALUATES BEHAVIORAL CLONING - NOTHING ELSE
 
         // Initialize data directory
         File folder = Util.stampedFolder("cloning_test", root);
@@ -98,6 +102,8 @@ public class DevelopmentMain {
     }
 
     private static void bamTest(File root) throws Exception {
+
+        // COMPARES BAM AGAINST CLONING AND MODEL-BASED IRL, BUT IN THE FIXED LENGTH DEMO SETTING
 
         File folder = Util.stampedFolder("bam_test", root);
 
@@ -168,6 +174,9 @@ public class DevelopmentMain {
     }
 
     private static void fullTest(File root) throws Exception {
+
+        // COMPARES ALL THE ALGORITHMS IN THE FULL LENGTH DEMO SETTING
+
         File folder = Util.stampedFolder("full_test", root);
 
         Environment center_block = GridWorlds.centerBlock(NavGrid.FOUR);
@@ -253,6 +262,9 @@ public class DevelopmentMain {
     }
 
     private static void goalTest(File root) throws Exception {
+
+        // EVALUATES ALL THE ALGORITHMS IN THE VARIABLE LENGTH (GOAL TERMINATED) DEMO SETTING
+
         File folder = Util.stampedFolder("goal_test", root);
 
         Environment center_block = GridWorlds.centerBlock(NavGrid.FOUR);
@@ -342,6 +354,9 @@ public class DevelopmentMain {
     }
 
     private static void combinedTest(File root) throws Exception {
+
+        // EVALUATES BAM, MODEL-BASED IRL, AND CLONING WITH A COMBINATION OF FEEDBACK AND DEMONSTRATIONS
+
         File folder = Util.stampedFolder("combined_test", root);
 
         Environment center_block = GridWorlds.centerBlock(NavGrid.FOUR);
@@ -421,6 +436,9 @@ public class DevelopmentMain {
     }
 
     private static void commonTest(File root) throws Exception {
+
+        // EVALUATES BOTH COMMON REWARD LEARNING AND COMMON INTENT LEARNING (WHAT WAS THE DISTINCTION?)
+
         File folder = Util.stampedFolder("common_test", root);
 
         Environment center_block = GridWorlds.centerBlock(NavGrid.FOUR);
@@ -578,88 +596,5 @@ public class DevelopmentMain {
 
         // Run experiment
         experiment.run(folder);
-    }
-
-    /**
-     * Opens a directory selection dialog, and returns the selected directory.
-     *
-     * @param start the directory which the dialog should initially display
-     * @param message the message to be displayed at the top of the chooser window
-     * @return optionally the selected directory, but empty if the user cancels
-     */
-    public static Optional<File> chooseFolder(File start, String message) {
-        JFileChooser chooser = new JFileChooser();
-        chooser.setCurrentDirectory(start);
-        chooser.setDialogTitle(message);
-        chooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
-        chooser.setAcceptAllFileFilterUsed(false);
-
-        if(chooser.showOpenDialog(null) == JFileChooser.APPROVE_OPTION)
-            return Optional.of(chooser.getSelectedFile());
-
-        return Optional.empty();
-    }
-
-    /**
-     * Attempts to set the specified preference for the given class and the current user.
-     *
-     * @param name the name of the preference
-     * @param value the value of the preference
-     */
-    public static void setPreference(String name, String value) {
-        try {
-            Preferences.userRoot().put(name, value);
-        } catch(Exception e) {
-            System.out.println(e.getMessage());
-        }
-    }
-
-    /**
-     * Attempts to get the specified preference for the given class and the current user.
-     *
-     * @param name the name of the preference
-     * @return optionally the value of the preference, if it exists
-     */
-    public static Optional<String> getPreference(String name) {
-        try{
-            return Optional.ofNullable(Preferences.userRoot().get(name, null));
-        } catch(Exception e) {
-            System.out.println(e.getMessage());
-
-            return Optional.empty();
-        }
-    }
-
-    /**
-     * Attempts to get the specified preference for the given class and the
-     * current user. Returns the given default value if this isn't found.
-     *
-     * @param name the name of the preference
-     * @param opt the default value to return if the preference isn't set
-     * @return the value of the preference, or the default value if this doesn't exist
-     */
-    public static String getPreference(String name, String opt) {
-        try{
-            return Preferences.userRoot().get(name, opt);
-        } catch(Exception e) {
-            System.out.println(e.getMessage());
-
-            return opt;
-        }
-    }
-
-    /**
-     * Displays the provided image in a new window.
-     *
-     * @param image the image to display
-     * @param name the name of the image for the window title
-     */
-    public static void showImage(BufferedImage image, String name) {
-        JFrame window = new JFrame(name);
-        window.setSize(image.getWidth() + 20, image.getHeight() + 20);
-        // window.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
-        window.getContentPane().add(new JLabel(new ImageIcon(image)));
-        window.pack();
-        window.setVisible(true);
     }
 }

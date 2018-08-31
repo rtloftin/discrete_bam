@@ -2,19 +2,22 @@ package bam.simulation;
 
 
 import bam.algorithms.action.ActionModel;
+import bam.algorithms.action.NormalizedActionModel;
+import bam.algorithms.feedback.ASABL;
+import bam.algorithms.feedback.FeedbackModel;
+import bam.algorithms.optimization.ClippedMomentum;
 import bam.algorithms.planning.BoltzmannPlanner;
-import bam.algorithms.planning.MaxPlanner;
 import bam.algorithms.variational.Variational;
 import bam.domains.Environment;
-import bam.domains.NavGrid;
-import bam.domains.gravity_world.GravityWorlds;
 import bam.algorithms.*;
-import bam.algorithms.optimization.Momentum;
-import bam.domains.grid_world.GridWorlds;
-import bam.algorithms.alt.OldNormalizedActionModel;
 import bam.algorithms.variational.PointDensity;
+import bam.domains.NavGrid;
+import bam.domains.farm_world.FarmWorlds;
+import bam.domains.gravity_world.GravityWorlds;
+import bam.domains.grid_world.GridWorlds;
 
 import java.io.File;
+import java.util.HashMap;
 import java.util.Optional;
 
 /**
@@ -31,59 +34,83 @@ public class SimulationMain {
 
     public static void main(String[] args) throws Exception {
 
-        // Try to load config file
+        // Define learning environments
+        HashMap<String, Environment> environments = new HashMap<>();
+        environments.put("center_wall", GridWorlds.centerWallLarge(NavGrid.FOUR));
+        environments.put("three_rooms", GridWorlds.threeRoomsLarge(NavGrid.FOUR));
+        environments.put("two_rooms", GridWorlds.twoRooms());
+        environments.put("doors", GridWorlds.doors());
+        environments.put("two_fields", FarmWorlds.twoFields());
+        environments.put("three_fields", FarmWorlds.threeFields());
+        environments.put("two_colors", GravityWorlds.twoColors());
+        environments.put("three_colors", GravityWorlds.threeColors());
 
-        // If failed, generate skeleton config file and exit
+        // Get configuration
+        File data_root = new File(System.getProperty("user.home"));
+        boolean include_feedback = false;
+        Environment environment = environments.get("center_wall");
 
-        // Otherwise, configure and run main experiment
+        // Check if we were given the correct command line arguments
+        if(2 == args.length) {
 
-        // Get the root directory
-        String initial = Util.getPreference("root", System.getProperty("user.home"));
-        Optional<File> root = Util.chooseFolder(new File(initial),
-                "Please select a folder for results");
+            if(environments.containsKey(args[0]))
+                environment = environments.get(args[0]);
 
-        if(!root.isPresent())
-            throw new RuntimeException("User did not confirm a fucking directory to store the fucking data!");
+            include_feedback = args[1].equals("combined");
+        } else {
 
-        Util.setPreference("root", root.get().getPath());
+            // Select folder
+            Optional<File> selection = Util
+                    .chooseFolder(new File(Util.getPreference("data_root", System.getProperty("user.home"))),
+                            "Please select a folder for results");
 
-        // singleTaskDemoExperiment(root.get());
-        multiTaskDemoExperiment(root.get());
+            if(!selection.isPresent())
+                throw new RuntimeException("User did not confirm a fucking directory to store the fucking data!");
 
-        // cloningTest(root.get());
-        // bamTest(root.get());
+            data_root = selection.get();
+            Util.setPreference("data_root", data_root.getPath());
+
+            // Select experiment type
+            include_feedback = !Util.yesOrNo("Use only demonstrations, no feedback?");
+        }
+
+        // Run experiments
+        if(include_feedback) {
+            demonstrationFeedbackExperiment(data_root, environment);
+        } else {
+            demonstrationExperiment(data_root, environment);
+        }
     }
 
     /////////////////////////////////////////////////////////////////////////
     // Experimental Methods -- use these to actually generate useful data //
     ////////////////////////////////////////////////////////////////////////
 
-    private static void singleTaskDemoExperiment(File root) throws Exception {
+    /**
+     * Runs experiments with only goal-terminated demonstrations.  Compares BAM against
+     * model-based IRL, model-based IRL with a global cost function, and behavioral cloning.
+     *
+     * @param data_root the root directory where the data should be stored, a new subdirectory will be created
+     * @param environments the list of environments in which the algorithms should be evaluated.
+     * @throws Exception if any error occurs (duh)
+     */
+    private static void demonstrationExperiment(File data_root, Environment... environments) throws Exception {
 
-        // Initialize data directory
-        File folder = Util.stampedFolder("single_task", root);
-
-        // Initialize test environments
-        Environment empty = GridWorlds.empty(10, 10, NavGrid.FOUR);
-        Environment center_block = GridWorlds.centerBlock(NavGrid.FOUR);
-        Environment center_wall = GridWorlds.centerWall(NavGrid.FOUR);
-        Environment two_rooms = GridWorlds.twoRooms(NavGrid.FOUR);
+        // Data directory
+        File folder = Util.stampedFolder("demonstration_experiment", data_root);
 
         // Action Model
-        ActionModel action_model = OldNormalizedActionModel.beta(1.0);
+        ActionModel action_model = NormalizedActionModel.beta(1.0);
 
         // Task source
         Variational task_source = PointDensity.builder()
-                .optimization(Momentum.with(0.01, 0.5)).build();
+                .optimization(ClippedMomentum.with(0.01, 0.7, 0.1))
+                .build();
 
-        /* Variational task_source = GaussianDensity.builder()
-                .optimization(AdaGrad.with(0.001, 0.7)).priorDeviation(1.0).numSamples(5).build(); */
-
-        // Initialize BAM algorithms
+        // BAM algorithm
         Algorithm bam = BAM.builder()
                 .taskSource(task_source)
-                .dynamicsOptimization(Momentum.with(0.1, 0.5))
-                // .dynamicsOptimization(AdaGrad.with(1.0, 0.7))
+                .dynamicsOptimization(ClippedMomentum.with(1.0, 0.7, 0.1))
                 .planningAlgorithm(BoltzmannPlanner.algorithm( 1.0))
                 .actionModel(action_model)
                 .taskUpdates(20)
@@ -92,122 +119,123 @@ public class SimulationMain {
                 .useTransitions(true)
                 .build();
 
-        // Initialize model-based algorithms
-        Algorithm model = ModelBased.builder()
+        // Model-based IRL
+        Algorithm model_based = ModelBased.builder()
                 .taskSource(task_source)
-                .dynamicsOptimization(Momentum.with(0.01, 0.5))
-                // .dynamicsOptimization(AdaGrad.with(1.0, 0.7))
+                .dynamicsOptimization(ClippedMomentum.with(1.0, 0.7, 0.1))
                 .planningAlgorithm(BoltzmannPlanner.algorithm(1.0))
                 .actionModel(action_model)
                 .taskUpdates(200)
                 .dynamicsUpdates(200)
                 .build();
 
-        // Initialize cloning algorithms
+        // Behavioral cloning
         Algorithm cloning = Cloning.builder()
-                .taskSource(PointDensity.builder()
-                        .optimization(Momentum.with(0.001, 0.5)).build())
+                .taskSource(task_source)
                 .actionModel(action_model)
                 .numUpdates(200)
                 .build();
 
-        Algorithm irl = MLIRL.builder()
-                .planningAlgorithm(MaxPlanner.algorithm())
-                .taskSource(PointDensity.builder().build())
+        // Global cost
+        Algorithm global_cost = CommonReward.builder()
+                .taskSource(task_source)
+                .dynamicsOptimization(ClippedMomentum.with(1.0, 0.7, 0.1))
+                .planningAlgorithm(BoltzmannPlanner.algorithm(1.0))
                 .actionModel(action_model)
                 .taskUpdates(200)
+                .dynamicsUpdates(200)
                 .build();
 
         // Initialize experiment
-        SingleTaskDemoExperiment experiment = SingleTaskDemoExperiment.builder()
-                .environments(empty, center_block, center_wall, two_rooms)
-                .algorithms(bam, model, cloning, irl)
-                .numSessions(50)
+        MultiTaskGoalExperiment experiment = MultiTaskGoalExperiment.builder()
+                .environments(environments)
+                .algorithms(bam, model_based, cloning, global_cost)
+                .numSessions(300)
                 .maxDemonstrations(10)
-                .evaluationEpisodes(50)
+                .evaluationEpisodes(100)
+                .finalNoop(true)
                 .build();
 
         // Run experiment
         experiment.run(folder);
     }
 
-    private static void multiTaskDemoExperiment(File root) throws Exception {
+    /**
+     * Runs  experiments with both goal-terminated demonstrations and evaluative feedback.  Compares BAM against
+     * model-based IRL, model-based IRL with a global cost function, and behavioral cloning.
+     *
+     * @param data_root the root directory where the data should be stored, a new subdirectory will be created
+     * @param environments the list of environments in which the algorithms should be evaluated.
+     * @throws Exception if any error occurs (duh)
+     */
+    private static void demonstrationFeedbackExperiment(File data_root, Environment... environments) throws Exception {
 
-        // Initialize data directory
-        File folder = Util.stampedFolder("multi_task", root);
-
-        // Initialize test environments
-        Environment empty = GridWorlds.empty(10, 10, NavGrid.FOUR);
-        Environment center_block = GridWorlds.centerBlock(NavGrid.FOUR);
-        Environment center_wall = GridWorlds.centerWall(NavGrid.FOUR);
-        Environment two_rooms = GridWorlds.twoRooms(NavGrid.FOUR);
-        Environment three_rooms = GridWorlds.threeRooms(NavGrid.FOUR);
-
-        Environment flip = GravityWorlds.flip();
-        Environment medium_flip = GravityWorlds.medium_flip();
-        Environment large_flip = GravityWorlds.large_flip();
-
-        Environment wall = GravityWorlds.wall();
-        Environment choices = GravityWorlds.choices();
+        // Data directory
+        File folder = Util.stampedFolder("demonstration_feedback_experiment", data_root);
 
         // Action Model
-        ActionModel action_model = OldNormalizedActionModel.beta(1.0);
+        ActionModel action_model = NormalizedActionModel.beta(1.0);
+
+        // Feedback Model
+        FeedbackModel feedback_model = ASABL.builder().build();
 
         // Task source
         Variational task_source = PointDensity.builder()
-                .optimization(Momentum.with(0.01, 0.5)).build();
+                .optimization(ClippedMomentum.with(0.01, 0.7, 0.1))
+                .build();
 
-        /* Variational task_source = GaussianDensity.builder()
-                .optimization(AdaGrad.with(0.001, 0.7)).priorDeviation(1.0).numSamples(5).build(); */
-
-        // Initialize BAM algorithms
+        // BAM algorithm
         Algorithm bam = BAM.builder()
                 .taskSource(task_source)
-                .dynamicsOptimization(Momentum.with(0.01, 0.5))
-                // .dynamicsOptimization(AdaGrad.with(1.0, 0.7))
+                .dynamicsOptimization(ClippedMomentum.with(1.0, 0.7, 0.1))
                 .planningAlgorithm(BoltzmannPlanner.algorithm( 1.0))
                 .actionModel(action_model)
+                .feedbackModel(feedback_model)
                 .taskUpdates(20)
                 .dynamicsUpdates(20)
                 .emUpdates(10)
                 .useTransitions(true)
                 .build();
 
-        // Initialize model-based algorithms
-        Algorithm model = ModelBased.builder()
+        // Model-based IRL
+        Algorithm model_based = ModelBased.builder()
                 .taskSource(task_source)
-                .dynamicsOptimization(Momentum.with(0.01, 0.5))
-                // .dynamicsOptimization(AdaGrad.with(1.0, 0.7))
+                .dynamicsOptimization(ClippedMomentum.with(1.0, 0.7, 0.1))
                 .planningAlgorithm(BoltzmannPlanner.algorithm(1.0))
                 .actionModel(action_model)
+                .feedbackModel(feedback_model)
                 .taskUpdates(200)
                 .dynamicsUpdates(200)
                 .build();
 
-        // Initialize cloning algorithms
+        // Behavioral cloning
         Algorithm cloning = Cloning.builder()
                 .taskSource(task_source)
                 .actionModel(action_model)
+                .feedbackModel(feedback_model)
                 .numUpdates(200)
                 .build();
 
-        Algorithm irl = MLIRL.builder()
-                .planningAlgorithm(MaxPlanner.algorithm())
+        // Global cost
+        Algorithm global_cost = CommonReward.builder()
                 .taskSource(task_source)
+                .dynamicsOptimization(ClippedMomentum.with(1.0, 0.7, 0.1))
+                .planningAlgorithm(BoltzmannPlanner.algorithm(1.0))
                 .actionModel(action_model)
+                .feedbackModel(feedback_model)
                 .taskUpdates(200)
+                .dynamicsUpdates(200)
                 .build();
 
         // Initialize experiment
-        MultiTaskDemoExperiment experiment = MultiTaskDemoExperiment.builder()
-                // .environments(empty, center_block, center_wall, two_rooms, three_rooms)
-                // .environments(flip, medium_flip)
-                .environments(wall, choices)
-                // .algorithms(bam, model, cloning, irl)
-                .algorithms(bam, model, cloning)
-                .numSessions(50)
-                .maxDemonstrations(10)
-                .evaluationEpisodes(50)
+        MultiTaskCombinedExperiment experiment = MultiTaskCombinedExperiment.builder()
+                .environments(environments)
+                .algorithms(bam, model_based, cloning, global_cost)
+                .feedbackModel(feedback_model)
+                .numSessions(300)
+                .numEpisodes(10)
+                .evaluationEpisodes(100)
+                .finalNoop(true)
                 .build();
 
         // Run experiment

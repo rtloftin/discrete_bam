@@ -22,13 +22,15 @@ public class GravityWorld implements Environment {
     public class Task implements bam.domains.Task {
 
         private final int row, column;
+        private final int gravity;
         private final String name;
         private final double[] rewards;
 
-        private Task(String name, int row, int column) {
+        private Task(String name, int row, int column, int gravity) {
             this.name = name;
             this.row = row;
             this.column = column;
+            this.gravity = gravity;
 
             // Initialize reward function
             rewards = new double[grid.numCells()];
@@ -39,7 +41,8 @@ public class GravityWorld implements Environment {
         }
 
         private Task(JSONObject config) throws JSONException {
-            this(config.getString("name"), config.getInt("row"), config.getInt("column"));
+            this(config.getString("name"), config.getInt("row"),
+                    config.getInt("column"), config.optInt("gravity", -1));
         }
 
         public int row() {
@@ -55,9 +58,9 @@ public class GravityWorld implements Environment {
 
             int row = random.nextInt(grid.height());
             int col = random.nextInt(grid.width());
-            int gravity = random.nextInt(Gravity.values().length);
+            int grav = (-1 == gravity) ? random.nextInt(Gravity.values().length) : gravity;
 
-            return (gravity * grid.numCells()) + grid.index(row, col);
+            return (grav * grid.numCells()) + grid.index(row, col);
         }
 
         @Override
@@ -75,7 +78,8 @@ public class GravityWorld implements Environment {
             return new JSONObject()
                     .put("name", name())
                     .put("row", row)
-                    .put("column", column);
+                    .put("column", column)
+                    .put("gravity", gravity);
         }
     }
 
@@ -114,7 +118,21 @@ public class GravityWorld implements Environment {
      * @param row the row of the goal
      * @param column the column of the goal
      */
-    public void addGoal(String name, int row, int column) {  tasks.add(this.new Task(name, row, column)); }
+    public void addGoal(String name, int row, int column) {
+        tasks.add(this.new Task(name, row, column, -1));
+    }
+
+    /**
+     * Adds a new task with a goal at the given row and column.
+     *
+     * @param name the name of this task
+     * @param row the row of the goal
+     * @param column the column of the goal
+     * @param gravity the initial gravity direction
+     */
+    public void addGoal(String name, int row, int column, int gravity) {
+        tasks.add(this.new Task(name, row, column, gravity));
+    }
 
     public int width() {
         return grid.width();

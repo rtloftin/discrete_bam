@@ -205,6 +205,34 @@ public class GridWorlds {
         return environment;
     }
 
+    public static GridWorld centerWallLarge(int connections) {
+
+        // Initialize grid
+        NavGrid grid = new NavGrid(11, 11, connections);
+
+        // Initialize map
+        boolean[][] map = new boolean[11][11];
+
+        for(int i=0; i < map.length; ++i)
+            for(int j=0; j < map[i].length; ++j)
+                map[i][j] = false;
+
+        for(int i=0; i < 7; ++i)
+            for(int j=4; j < 6; ++j)
+                map[i][j] = true;
+
+        // Create environment
+        GridWorld environment = new GridWorld("center-wall-large", grid, map);
+
+        // Initialize tasks
+        environment.addGoal("Bottom Left", 0, 0);
+        environment.addGoal("Bottom Right", 0, 10);
+        environment.addGoal("Middle Left", 5, 0);
+        environment.addGoal("Middle Right", 5, 10);
+
+        return environment;
+    }
+
     public static GridWorld twoRooms(int connections) {
 
         // Initialize grid
@@ -285,5 +313,48 @@ public class GridWorlds {
         return environment;
     }
 
+    public static GridWorld threeRoomsLarge(int connections) {
 
+        // Initialize grid
+        NavGrid grid = new NavGrid(13, 13, connections);
+
+        // Initialize map
+        boolean[][] map = new boolean[grid.height()][grid.width()];
+
+        for(int i=0; i < map.length; ++i)
+            for(int j=0; j < map[i].length; ++j)
+                map[i][j] = false;
+
+        for(int i=2; i < 11; ++i) {
+            map[2][i] = true;
+            map[6][i] = true;
+            map[10][i] = true;
+        }
+
+        for(int i=2; i < 11; ++i) {
+            map[i][2] = true;
+            map[i][6] = true;
+            map[i][10] = true;
+        }
+
+        map[3][6] = false;
+        map[4][6] = false;
+        map[5][6] = false;
+
+        map[4][2] = false;
+        map[8][2] = false;
+        map[4][10] = false;
+        map[8][10] = false;
+
+        // Create environment
+        GridWorld environment = new GridWorld("three-rooms-large", grid, map);
+
+        // Initialize tasks
+        environment.addGoal("Left",6, 0);
+        environment.addGoal("Right", 6, 12);
+        environment.addGoal("Inside Top",4, 4);
+        environment.addGoal("Inside Bottom", 8, 4);
+
+        return environment;
+    }
 }

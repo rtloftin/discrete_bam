@@ -39,6 +39,18 @@ public class Util {
     }
 
     /**
+     * Shows a pop-up dialog asking a yes or no question, and returns the result.
+     *
+     * @param message the question being asked
+     * @return true if yes, false if no
+     */
+    public static boolean yesOrNo(String message) {
+        int result = JOptionPane.showConfirmDialog(null, message, "Experiment", JOptionPane.YES_NO_OPTION);
+
+        return (JOptionPane.YES_OPTION == result);
+    }
+
+    /**
      * Creates and returns a unique, time stamped directory with the given name.
      *
      * @param name the name to prepended to the name of the directory.
