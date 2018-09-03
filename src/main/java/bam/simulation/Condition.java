@@ -200,7 +200,9 @@ public class Condition implements Iterable<Session> {
 
         success.csv(folder);
 
-        // Generate visualizations
+        // Generate visualizations -- we can't store all of the agent objects
+
+        /*
         for(Condition condition : conditions) {
             double max = -Double.MAX_VALUE;
             Agent best = null;
@@ -214,6 +216,6 @@ public class Condition implements Iterable<Session> {
             for(Visualization visualization : best.visualizations())
                 ImageIO.write(visualization.image, "png",
                         new File(folder, condition.name + "_" + visualization.name + ".png"));
-        }
+        }*/
     }
 }

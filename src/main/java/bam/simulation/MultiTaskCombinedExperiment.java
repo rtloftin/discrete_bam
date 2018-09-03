@@ -12,10 +12,7 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.PrintStream;
 import java.util.*;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.ThreadLocalRandom;
+import java.util.concurrent.*;
 
 public class MultiTaskCombinedExperiment {
 
@@ -130,7 +127,8 @@ public class MultiTaskCombinedExperiment {
         Dynamics dynamics = environment.dynamics();
 
         // Initialize session
-        Session session = Session.with(agent);
+        // Session session = Session.with(agent);
+        Session session = Session.get();
 
         // Generate data
         for(int demonstration = 0; demonstration < num_episodes; ++demonstration) {
@@ -243,8 +241,10 @@ public class MultiTaskCombinedExperiment {
         // Launch sessions
         List<Future<Session>> threads = new ArrayList<>();
 
-        for(int session = 0; session < num_sessions; ++session)
-            threads.add(pool.submit(() -> session(environment, experts, algorithm)));
+        for(int session = 0; session < num_sessions; ++session) {
+            // threads.add(pool.submit(() -> session(environment, experts, algorithm)));
+            threads.add(CompletableFuture.completedFuture(session(environment, experts, algorithm)));
+        }
 
         // Join sessions
         for (int session = 0; session < num_sessions; ++session)

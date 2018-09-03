@@ -48,7 +48,7 @@ public class SimulationMain {
         // Get configuration
         File data_root = new File(System.getProperty("user.home"));
         boolean include_feedback = false;
-        Environment environment = environments.get("center_wall");
+        Environment environment = environments.get("three_colors");
 
         // Check if we were given the correct command line arguments
         if(2 == args.length) {

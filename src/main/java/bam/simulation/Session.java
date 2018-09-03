@@ -28,6 +28,8 @@ public class Session {
         return new Session(agent);
     }
 
+    public static Session get() { return new Session(null); }
+
     public Agent agent() {
         return agent;
     }
